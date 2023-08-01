@@ -1,0 +1,31 @@
+{
+  "query": "mutation ($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { url } } }",
+  "variables": {
+    "input": {
+      "branch": {
+        "repositoryNameWithOwner": "%s",
+        "branchName": "%s"
+      },
+      "message": {"headline": "Add Moderne ingestion workflows" },
+      "fileChanges": {
+        "additions": [
+          {
+            "path": ".github/workflows/moderne-dispatch-ingest.yaml",
+            "contents": "%s"
+          },
+          {
+            "path": ".github/workflows/moderne-mass-ingest.yaml",
+            "contents": "%s"
+          },
+          {
+            "path": "ingest.sh",
+            "contents": "%s"
+          },
+          {
+            "path": "repos.csv",
+            "contents": "%s"
+          }
+        ]
+      },
+      "expectedHeadOid": "%s"
+    }}}

@@ -1,0 +1,2 @@
+,openrewrite/rewrite-spring,main,,gradle,java17,,,false,
+,openrewrite/rewrite-java-migration,main,,gradle,java17,,,false,

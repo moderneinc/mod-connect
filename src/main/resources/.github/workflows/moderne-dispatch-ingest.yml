@@ -1,0 +1,51 @@
+on:
+  repository_dispatch:
+    types: [moderne-ingest]
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Print event"
+        run: echo ${{ github.event.client_payload.repo }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.client_payload.repo }}
+          ref: ${{ github.event.client_payload.branch }}
+          token: ${{ secrets.%s }}
+          path: ${{ github.event.client_payload.repo }}
+          fetch-depth: 1
+      - name: Check for build system
+        id: build_tool
+        working-directory: ${{ github.event.client_payload.repo }}
+        run: |
+          if test -f "build.gradle"; then
+              echo "buildTool=gradle" >> $GITHUB_OUTPUT
+          elif test -f "build.gradle.kts";  then
+              echo "buildTool=gradle" >> $GITHUB_OUTPUT
+          elif test -f "pom.xml"; then
+              echo "buildTool=maven" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/setup-java@v3
+        if: ${{steps.build_tool.outputs.buildTool == 'gradle'}}
+        with:
+          distribution: temurin
+          java-version: ${{ github.event.client_payload.javaVersion }}
+          cache: 'gradle'
+      - uses: actions/setup-java@v3
+        if: ${{steps.build_tool.outputs.buildTool == 'maven' }}
+        with:
+          distribution: temurin
+          java-version: ${{ github.event.client_payload.javaVersion }}
+          cache: 'maven'
+      - uses: moderneinc/moderne-publish-action@v0.1.8
+        with:
+          version: '%s'
+          publishUrl: '%s'
+          publishUser: ${{ secrets.%s }}
+          publishPwd: ${{ secrets.%s }}
+          additionalBuildArgs: ${{ github.event.client_payload.additionalBuildArgs }}
+          path: ${{ github.event.client_payload.repo }}
+          desiredStyle: ${{ github.event.client_payload.desiredStyle }}
+      - name: "Clean up workspace"
+        run: rm -Rf ${{ github.event.client_payload.repo }}

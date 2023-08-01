@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><flow-definition plugin="workflow-job@1308.v58d48a_763b_31">
+    <actions>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@2.2121.vd87fb_6536d1e"/>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@2.2121.vd87fb_6536d1e">
+            <jobProperties/>
+            <triggers>
+                <string>hudson.triggers.TimerTrigger</string>
+            </triggers>
+            <parameters/>
+            <options/>
+        </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+    </actions>
+    <description/>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <jenkins.model.BuildDiscarderProperty>
+            <strategy class="hudson.tasks.LogRotator">
+                <daysToKeep>-1</daysToKeep>
+                <numToKeep>3</numToKeep>
+                <artifactDaysToKeep>-1</artifactDaysToKeep>
+                <artifactNumToKeep>-1</artifactNumToKeep>
+            </strategy>
+        </jenkins.model.BuildDiscarderProperty>
+        <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+            <triggers>
+                <hudson.triggers.TimerTrigger>
+                    <spec>H H * * *</spec>
+                </hudson.triggers.TimerTrigger>
+            </triggers>
+        </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+    </properties>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@3691.v28b_14c465a_b_b_">
+        <script>
+        pipeline {
+            agent any
+            options {
+                timeout(time: 1, unit: 'HOURS')
+                disableConcurrentBuilds(abortPrevious: true)
+            }
+            triggers { cron('H H * * *') }
+            stages {
+                stage('Checkout') {
+                    steps {
+                        git (url: 'https://github.com/openrewrite/rewrite-spring.git', branch: 'main', credentialsId: 'myGitCreds')
+                    }
+                }
+                stage('Download CLI') {
+                    steps {
+                        sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.2.43/moderne-cli-linux-v0.2.43 &gt; mod"
+                        sh "chmod 755 mod"
+                    }
+                }
+                stage('Publish') {
+                    tools {
+                        jdk 'java11'
+                    }
+                    steps {
+                        sh './mod version'
+
+                        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
+                            sh './mod publish --path . --publishUrl https://artifactory.moderne.ninja/artifactory/moderne-ingest --publishUser ${ARTIFACTS_PUBLISH_CRED_USR} --publishPwd ${ARTIFACTS_PUBLISH_CRED_PWD} --desiredStyle="" --additionalBuildArgs="" --skipSSL="false" --verbose --gradlePluginVersion 5.0.2'
+                        }
+
+                    }
+                }
+            }
+            post {
+                always {
+                    cleanWs()
+                }
+            }
+        }
+        </script>
+        <sandbox>true</sandbox>
+    </definition>
+    <triggers/>
+    <disabled>false</disabled>
+</flow-definition>

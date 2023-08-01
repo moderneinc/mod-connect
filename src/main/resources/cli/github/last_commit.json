@@ -1,0 +1,3 @@
+{
+  "query": "query { repository(name: \"%s\", owner: \"%s\") { ref (qualifiedName: \"%s\"){ target { ... on Commit { history(first: 1) { nodes { oid } }}}}}}"
+}

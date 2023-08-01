@@ -1,0 +1,16 @@
+name: ingest
+on:
+  push:
+  schedule:
+    - cron:  '30 17 * * *'
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - id: change-permissions
+        run: chmod u+x ingest.sh
+      - id: dispatch-jobs
+        run: ./ingest.sh %s %s
+        env:
+          GH_PAT: ${{ secrets.%s }}

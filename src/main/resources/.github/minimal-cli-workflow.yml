@@ -1,0 +1,22 @@
+---
+name: moderne-publish
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - "*"
+jobs:
+  moderne-publish:
+    name: Moderne Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3 %s
+      - uses: moderneinc/moderne-publish-action@v0.1.8
+        with:
+          version: %s
+          publishUrl: %s
+          publishUser: ${{ secrets.%s }}
+          publishPwd: ${{ secrets.%s }}
+          additionalBuildArgs: '%s'

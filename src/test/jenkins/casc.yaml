@@ -1,0 +1,36 @@
+jenkins:
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+       - id: ${JENKINS_ADMIN_ID}
+         password: ${JENKINS_ADMIN_PASSWORD}
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "artifactCreds"
+              username: "${JENKINS_AST_PUBLISH_USERNAME}"
+              password: "${JENKINS_AST_PUBLISH_PASSWORD}"
+              description: "Username/Password Credentials to publish ASTs"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "myGitCreds"
+              username: "${JENKINS_GIT_USERNAME}"
+              password: "${JENKINS_GIT_PASSWORD}"
+              description: "Username/Password to clone repos"
+tool:
+  maven:
+    installations:
+      - name: java11
+        home: "/jdk"
+        properties:
+          - installSource:
+              installers:
+                - adoptOpenJdkInstaller:
+                    id: "jdk-11.0.14+9"
+unclassified:
+  location:
+    url: http://server_ip:8080/

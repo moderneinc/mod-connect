@@ -1,0 +1,22 @@
+---
+name: moderne-publish
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - "*"
+jobs:
+  moderne-publish:
+    name: Moderne Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3 
+      - uses: moderneinc/moderne-publish-action@v0.1.8
+        with:
+          version: %s
+          publishUrl: https://artifactory.moderne.ninja/artifactory/moderne-ingest
+          publishUser: ${{ secrets.AST_PUBLISH_USERNAME }}
+          publishPwd: ${{ secrets.AST_PUBLISH_PASSWORD }}
+          additionalBuildArgs: ''
