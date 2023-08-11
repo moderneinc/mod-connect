@@ -1,4 +1,4 @@
-@file:Suppress("GradlePackageUpdate")
+@file:Suppress("GradlePackageUpdate", "GradlePackageVersionRange")
 
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
 import java.util.*

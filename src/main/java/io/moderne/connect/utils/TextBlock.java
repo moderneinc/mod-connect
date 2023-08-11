@@ -16,6 +16,7 @@
 package io.moderne.connect.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -30,8 +31,13 @@ public final class TextBlock {
             throw new IllegalStateException("Resource is null");
         }
 
-        Reader in = new InputStreamReader(TextBlock.class.getClassLoader().getResourceAsStream(resource),
-                StandardCharsets.UTF_8);
+        InputStream is = TextBlock.class.getClassLoader().getResourceAsStream(resource);
+
+        if (is == null) {
+            throw new IllegalStateException("Resource not found: " + resource);
+        }
+
+        Reader in = new InputStreamReader(is, StandardCharsets.UTF_8);
         try {
             for (int numRead; (numRead = in.read(buffer, 0, buffer.length)) > 0; ) {
                 out.append(buffer, 0, numRead);
