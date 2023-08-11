@@ -283,6 +283,7 @@ public class Jenkins implements Callable<Integer> {
                     "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
     private boolean verbose;
 
+    @SuppressWarnings("unused")
     static class UserSecret {
         @CommandLine.Option(names = "--apiToken", description = "The Jenkins apiToken that will be used when " +
                 "authentication is needed in Jenkins (e.g., the creation of Jenkins Jobs).\n")
@@ -313,21 +314,21 @@ public class Jenkins implements Callable<Integer> {
 
     @RequiredArgsConstructor
     enum Templates {
-        DOWNLOAD_WITHOUT_CREDENTIALS("cli/jenkins/pipeline_download.groovy"),
-        DOWNLOAD_WITH_CREDENTIALS("cli/jenkins/pipeline_download_creds.groovy"),
+        DOWNLOAD_WITHOUT_CREDENTIALS("cli/jenkins/pipeline_download.groovy.template"),
+        DOWNLOAD_WITH_CREDENTIALS("cli/jenkins/pipeline_download_creds.groovy.template"),
 
-        FLOW_DEFINITION("cli/jenkins/flow_definition.xml"),
-        FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml"),
+        FLOW_DEFINITION("cli/jenkins/flow_definition.xml.template"),
+        FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
 
-        PIPELINE("cli/jenkins/pipeline.groovy"),
+        PIPELINE("cli/jenkins/pipeline.groovy.template"),
 
-        PUBLISH_CREDENTIALS("cli/jenkins/pipeline_credentials.groovy"),
-        MAVEN_SETTINGS("cli/jenkins/pipeline_maven_settings.groovy"),
+        PUBLISH_CREDENTIALS("cli/jenkins/pipeline_credentials.groovy.template"),
+        MAVEN_SETTINGS("cli/jenkins/pipeline_maven_settings.groovy.template"),
 
-        STAGE_CHECKOUT("cli/jenkins/pipeline_stage_checkout.groovy"),
-        STAGE_DOWNLOAD("cli/jenkins/pipeline_stage_download.groovy"),
-        STAGE_PUBLISH("cli/jenkins/pipeline_stage_publish.groovy"),
-        TOOLS("cli/jenkins/pipeline_tools.groovy");
+        STAGE_CHECKOUT("cli/jenkins/pipeline_stage_checkout.groovy.template"),
+        STAGE_DOWNLOAD("cli/jenkins/pipeline_stage_download.groovy.template"),
+        STAGE_PUBLISH("cli/jenkins/pipeline_stage_publish.groovy.template"),
+        TOOLS("cli/jenkins/pipeline_tools.groovy.template");
 
         private final String filename;
 
@@ -625,7 +626,7 @@ public class Jenkins implements Callable<Integer> {
                     modDetectJava.append(" --supportedVersions ").append(version);
                 }
             }
-            toolExpressionJava = String.format("jdk \"${'java' + sh(returnStdout: true, script: '%s').trim()}\"", modDetectJava.toString());
+            toolExpressionJava = String.format("jdk \"${'java' + sh(returnStdout: true, script: '%s').trim()}\"", modDetectJava);
         } else if (!StringUtils.isBlank(jdkTool)) {
             // Use the hardcoded CSV column value as a Jenkins Java tool installation name
             toolExpressionJava = String.format("jdk '%s'", jdkTool);

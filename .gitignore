@@ -6,6 +6,10 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+!**/src/test/repos/**/lib
+!**/src/test/repos/**/build
+!**/src/test/repos/**/target
+!**/src/test/repos/**/.gradle/**
 
 ### STS ###
 .apt_generated

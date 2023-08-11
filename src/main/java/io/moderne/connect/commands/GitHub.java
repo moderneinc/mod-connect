@@ -351,7 +351,7 @@ public class GitHub implements Callable<Integer> {
     }
 
     private void generateWorkflowFile() throws IOException {
-        String setupJavaAction = TextBlock.textBlock("cli/github/setupJava.json");
+        String setupJavaAction = TextBlock.textBlock("cli/github/setupJava.json.template");
         if (new File(source.path.toFile(), "pom.xml").exists()) {
             setupJavaAction = String.format(setupJavaAction, javaVersion, "maven");
         } else if (new File(source.path.toFile(), "build.gradle").exists()
@@ -385,7 +385,7 @@ public class GitHub implements Callable<Integer> {
     private void commitFiles() throws IOException {
         HttpResponse<String> response = Unirest.post(apiURL + "/graphql")
                 .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
-                .body(String.format(TextBlock.textBlock("cli/github/createRepo.json"),
+                .body(String.format(TextBlock.textBlock("cli/github/createRepo.json.template"),
                         repository, branch,
                         toBase64(String.format(toString(MODERNE_DISPATCH_INGEST_WORKFLOW),
                                 repoReadSecretName, cliVersion, publishUrl, publishUserSecretName, publishPwdSecretName)),
@@ -404,7 +404,7 @@ public class GitHub implements Callable<Integer> {
         String[] slug = repository.split("/");
         HttpResponse<String> lastCommitResponse = Unirest.post(apiURL + "/graphql")
                 .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
-                .body(String.format(TextBlock.textBlock("cli/github/last_commit.json"), slug[1], slug[0], branch)).asString();
+                .body(String.format(TextBlock.textBlock("cli/github/last_commit.json.template"), slug[1], slug[0], branch)).asString();
 
         if (!lastCommitResponse.isSuccess()) {
             throw new RuntimeException(
