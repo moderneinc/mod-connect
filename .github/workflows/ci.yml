@@ -33,7 +33,7 @@ jobs:
         timeout-minutes: 20
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: ${{ env.GRADLE_SWITCHES }} licenseCheck build
+          arguments: ${{ env.GRADLE_SWITCHES }} license build
       - name: Upload build reports
         uses: actions/upload-artifact@v3
         with:
