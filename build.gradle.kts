@@ -1,6 +1,7 @@
 @file:Suppress("GradlePackageUpdate")
 
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
+import java.util.*
 
 plugins {
     java
@@ -10,10 +11,19 @@ plugins {
     id("org.owasp.dependencycheck") version "8.1.0"
     id("java-library-distribution")
     id("org.asciidoctor.jvm.convert") version "3.3.2"
+    id("com.github.hierynomus.license") version "0.16.1"
 }
 
 configure<nebula.plugin.release.git.base.ReleasePluginExtension> {
     defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.SNAPSHOT(project)
+}
+
+license {
+    ext.set("year", Calendar.getInstance().get(Calendar.YEAR))
+    skipExistingHeaders = true
+    header = project.rootProject.file("gradle/licenseHeader.txt")
+    strictCheck = true
+    include("**/*.java")
 }
 
 dependencyCheck {
@@ -38,8 +48,8 @@ repositories {
 configurations {
     all {
         resolutionStrategy {
-            cacheChangingModulesFor(1, TimeUnit.HOURS)
-            cacheDynamicVersionsFor(1, TimeUnit.HOURS)
+            cacheChangingModulesFor(0, TimeUnit.MINUTES)
+            cacheDynamicVersionsFor(0, TimeUnit.MINUTES)
             exclude("ch.qos.logback")
         }
     }
