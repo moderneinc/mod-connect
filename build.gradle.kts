@@ -92,7 +92,7 @@ tasks.named<Test>("test") {
 }
 
 application {
-    mainClass.set("io.moderne.cli.commands.Mod")
+    mainClass.set("io.moderne.connect.commands.Connect")
 }
 
 java {
