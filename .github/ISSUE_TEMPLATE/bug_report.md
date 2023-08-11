@@ -19,6 +19,7 @@ For releases check the GitHub Releases page.
 -->
 I am using
 
+- mod-connect v0.0.1
 - mod-cli v1.2.3
 - GitHub / Jenkins vx.y.z / another CI
 
