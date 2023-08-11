@@ -61,7 +61,7 @@ import java.util.stream.Stream;
                 "3. (Optionally) Delete jobs. This is only required if --deleteSkipped is selected.\n" +
                 "    - POST /job/$folder/job/$item/doDelete\n\n" +
                 "For more details around these permissions, please see: https://cutt.ly/75J0mtI")
-//The CloudBees docs for permissions are https://docs.cloudbees.com/docs/cloudbees-ci/latest/cloud-secure-guide/delegating-administration-modern#_overallsystem_read
+// The CloudBees docs for permissions are https://docs.cloudbees.com/docs/cloudbees-ci/latest/cloud-secure-guide/delegating-administration-modern#_overallsystem_read
 public class Jenkins implements Callable<Integer> {
 
     /**

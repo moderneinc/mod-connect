@@ -1,49 +1,14 @@
 # mod-connect
 
-This is a CLI tool to generate LST files with the Moderne CLI (mod) for all your repositories without having
-to manually adapt the existing repository workflows/pipelines.
+`mod-connect` is a CLI tool used to create ingestion pipelines that will regularly build and publish LST artifacts to your artifact repository. Setting up these pipelines _will not_ affect or require changes to your existing workflows or pipelines.
 
-## Development
+## Pre-requisites
 
-_If you wish to contribute to this project, follow these instructions._
+* You will need to have Java 8 or higher installed to build or run this tool.
 
-### How to build and run the CLI locally
+## Installation instructions
 
-1. Clone the project to your machine.
-
-2. Run the following command to build the project. This will create a zip file in the `build/distributions` directory:
-
-   ```shell
-   ./gradlew build
-   ```
-
-3. With the zip file made, unzip it by running:
-
-   ```shell
-   unzip build/distributions/mod-connect.zip
-   ```
-
-4. You should now have a `mod-connect` tool you can run use to run various CLI commands. This is the file you unzipped
-   in the previous step.
-
-   ```shell
-   cd build/distributions/mod-connect
-   bin/mod-connect --help
-   ```
-
-5. Now you can use mod-connect for GitHub Actions or Jenkins.
-
-## How to use the mod-connect CLI
-
-### Pre-requisites
-
-- The CLI is written in Java and can run on top of Java 8 or higher.
-
-### How to download mod-connect
-
-1. You need to go to releases section of this repository (https://github.com/moderneinc/mod-connect/releases) and
-   download
-   the latest version of the CLI.
+1. Go to the [releases section of this repository](https://github.com/moderneinc/mod-connect/releases) and download the `mod-connect.zip` file found under the latest release.
 
 2. Unzip the file by running:
 
@@ -57,86 +22,145 @@ _If you wish to contribute to this project, follow these instructions._
    export PATH=$PATH:$(pwd)/mod-connect/bin
    ```
 
-4. You should now have a `mod-connect` tool you can run use to run various CLI commands. Use the `jenkins`
-   or `github` subcommand to configure your repositories.
+4. You should now have a `mod-connect` tool you can run use to run various CLI commands. Use the [jenkins](#mod-connect-jenkins)
+   or [github](#mod-connect-github) subcommand to configure your ingestion pipeline. For more information about the commands you can run the following command:
 
    ```shell
-   mod-connect --help
+   mod-connect help
    ```
 
-### mod-connect for Jenkins
+## Usage instructions
 
-You need to prepare a `repos.csv` file following this structure:
+### `mod-connect jenkins`
 
-`[scmHost, repoName, branch, mavenTool, gradleTool, jdkTool, repoStyle, repoBuildAction, repoSkip, skipReason]`
+This command will create a Jenkins Job for each configured repository that will build and publish LST artifacts to your artifact repository on a regular basis.
 
-| Column          | Required | Notes                                                                                   |
-|-----------------|----------|-----------------------------------------------------------------------------------------|
-| scmHost         | Optional | SCM Host. By default `github.com`.                                                      |
-| repoName        | Required | Repository Slug with form `organization/name`, i.e. `google/guava`.                     |
-| branch          | Optional | Github branch name to ingest.                                                           |
-| mavenTool       | Optional | The maven tool name installed as a central Jenkins Maven Tool to apply in the pipeline  |
-| gradleTool      | Optional | The gradle tool name installed as a central Jenkins Maven Tool to apply in the pipeline |
-| jdkTool         | Optional | The jdk tool name installed as a central Jenkins Maven Tool to apply in the pipeline    |
-| repoStyle       | Optional | OpenRewrite style name to apply during ingest.                                          |
-| repoBuildAction | Optional | Additional build tool tasks/targets to execute first for Maven and Gradle builds.       |
-| skip            | Optional | Repo to skip                                                                            |
-| skipReason      | Optional | The reason to skip the repository                                                       |
+Before you can run this command, you will need to prepare a `repos.csv` file that follows this structure:
 
-````shell
-mod-connect jenkins --fromCsv repos.csv --jenkinsUser $JENKINS_USER --jenkinsPwd $JENKINS_PWD --publishUrl $ARTIFACTORY_REPO_URL --publishCredsId artifactCreds --gitCredsId myGitCreds --controllerUrl=$JENKINS_URL
-````
-
-The command can also be enriched with the default `mavenTool`, `gradleTool` and `jdkTool` when there is no value
-applied in the CSV using `--defaultMaven`, `--defaultGradle` and `--defaultJdk` options.
-
-### mod-connect for GitHub Actions
-
-For a single repository, you can add the [moderne-publish-action](https://github.com/moderneinc/moderne-publish-action)
-in your workflow
-or run the following command:
-
-```shell
-mod-connect github --path $my-repo-folder\
- --publishUserSecretName $ghSecretUserToPublish --publishPwdSecretName $ghSecretPwdToPublish --publishUrl $urlToPublish` 
+```
+scmHost, repoName, branch, mavenTool, gradleTool, jdkTool, repoStyle, repoBuildAction, repoSkip, skipReason
 ```
 
-For a massive ingestion, you need to:
+| Column          | Required | Notes                                                                                                                                                                 |
+|-----------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| scmHost         | Optional | The URL of the source code management tool where the repository is hosted. Defaults to `github.com`.                                                                  |
+| repoName        | Required | The repository that should be ingested. Follows the format of: `organization/repository` (e.g., `google/guava`).                                                      |
+| branch          | Optional | The branch of the above repository that should be ingested.                                                                                                           |
+| mavenTool       | Optional | The name of the Maven tool that should be used to run Maven jobs. Specified in the Jenkins Global Tool Configuration page: `{controllerUrl}/manage/configureTools/`   |
+| gradleTool      | Optional | The name of the Gradle tool that should be used to run Gradle jobs. Specified in the Jenkins Global Tool Configuration page: `{controllerUrl}/manage/configureTools/` |
+| jdkTool         | Optional | The name of the JDK tool that should be used to run JDK jobs. Specified in the Jenkins Global Tool Configuration page: `{controllerUrl}/manage/configureTools/`       |
+| repoStyle       | Optional | The OpenRewrite style name to apply during ingestion.                                                                                                                 |
+| repoBuildAction | Optional | Additional arguments that are added to the Maven or Gradle build command.                                                                                             |
+| skip            | Optional | If set to true, this repository will be skipped and not ingested.                                                                                                     |
+| skipReason      | Optional | The context for why the repo is being skipped.                                                                                                                        |
 
-1. Prepare a `repos.csv` file with the following columns:
+Once you've created the `repos.csv` file, you can set up the ingestion pipeline by running:
 
-`repoName, branch, javaVersion, style, repoBuildAction, skip, skipReason`
+````shell
+mod-connect jenkins --fromCsv repos.csv \
+  --jenkinsUser $JENKINS_USER \
+  --jenkinsPwd $JENKINS_PWD \
+  --publishUrl $ARTIFACTORY_REPO_URL \
+  --publishCredsId artifactCreds \
+  --gitCredsId myGitCreds \
+  --controllerUrl $JENKINS_URL
+````
 
-| Column          | Required | Notes                                                                             |
-|-----------------|----------|-----------------------------------------------------------------------------------|
-| repoName        | Required | Repository Slug with form `organization/name`, i.e. `google/guava`.               |
-| branch          | Optional | Github branch name to ingest.                                                     |
-| javaVersion     | Optional | The Java version number to apply in actions/setup-java@v3                         |
-| style           | Optional | OpenRewrite style name to apply during ingest.                                    |
-| repoBuildAction | Optional | Additional build tool tasks/targets to execute first for Maven and Gradle builds. |
-| skip            | Optional | Repo to skip                                                                      |
-| skipReason      | Optional | The reason to skip the repository                                                 |
+**Note**: You can specify defaults for the repositories in your `repos.csv` file by using the `--defaultMaven`, `--defaultGradle`, and `--defaultJdk` options. If you include those in your command, the defaults you specify for those parameters will be used when a row in your `repos.csv` does not include `mavenTool`, `gradleTool`, or `jdkTool` respectively.
 
-2. Create and initialize a GitHub repository for ingestion purposes. For instance, `acme/moderne-ingest`
-3. Add the following secrets for ingestion available via Actions
+### `mod-connect github`
 
-| Secret           | Notes                                                                                       |
-|------------------|---------------------------------------------------------------------------------------------|
-| PUBLISH_AST_USER | The username to publish into your Artifactory or Nexus                                      |
-| PUBLISH_AST_PWD  | The password to publish into your Artifactory or Nexus                                      |
-| GH_PAT           | The secret with read access to clone the repository                                         |
-| GH_DISPATCH_PAT  | The classic secret with write access restricted to the new repository to dispatch workflows |
+This command will create a GitHub workflow that builds and publishes LST artifacts to your artifact repository on a regular basis. A workflow can be created for ingesting a single repository (by specifying the `--path` parameter or by manually adding the [moderne-publish-action](https://github.com/moderneinc/moderne-publish-action) to your repository) or a workflow can be created for ingesting a mass number of repositories (by specifying the `--fromCsv` parameter).
 
-4. Create a Personal Access Token (WORKFLOW_PAT) with write and workflow access to the new repository
-   (or reuse the GH_DISPATCH_PAT) to automatically commit and run the workflows in the new repository
-   (e.g `acme/moderne-ingest`).
+#### If you want to ingest a single repository
+
+Please run the following command:
+
+```shell
+mod-connect github --path $my-repo-folder \
+ --publishUserSecretName $ghSecretUserToPublish \
+ --publishPwdSecretName $ghSecretPwdToPublish \
+ --publishUrl $urlToPublish` 
+```
+
+#### If you want to ingest a mass number of repositories
+
+1. Create a `repos.csv` file with the following columns:
+
+```
+repoName, branch, javaVersion, style, repoBuildAction, skip, skipReason
+```
+
+| Column          | Required | Notes                                                                                                                     |
+|-----------------|----------|---------------------------------------------------------------------------------------------------------------------------|
+| repoName        | Required | The repository that should be ingested. Follows the format of `organization/repositoryRepository` (e.g., `google/guava`). |
+| branch          | Optional | The branch of the above repository that should be ingested.                                                               |
+| javaVersion     | Optional | The Java version used to compile this repository.                                                                         |
+| style           | Optional | The OpenRewrite style name to apply during ingestion.                                                                     |
+| repoBuildAction | Optional | Additional arguments that are added to the Maven or Gradle build command.                                                 |
+| skip            | Optional | If set to true, this repository will be skipped and not ingested.                                                         |
+| skipReason      | Optional | The context for why the repo is being skipped.                                                                            |
+
+2. Create and initialize a GitHub repository where this ingestion pipeline will be set up (e.g., `acme/moderne-ingest`).
+3. Add the following secrets to the above repository:
+
+| Secret           | Notes                                                                                        |
+|------------------|----------------------------------------------------------------------------------------------|
+| PUBLISH_AST_USER | The username to publish into your Artifactory or Nexus.                                      |
+| PUBLISH_AST_PWD  | The password to publish into your Artifactory or Nexus.                                      |
+| GH_PAT           | The secret with read access to clone the repository.                                         |
+| GH_DISPATCH_PAT  | The classic secret with write access restricted to the new repository to dispatch workflows. |
+
+4. Create a Personal Access Token (`WORKFLOW_PAT`) with write and workflow access to the new repository
+   (or reuse the `GH_DISPATCH_PAT`) to automatically commit and run the workflows in the new repository.
 
 5. Run the following command:
 
 ```shell
-mod-connect github --fromCsv $my-csv\ 
-  --publishUserSecretName PUBLISH_AST_USER --publishPwdSecretName PUBLISH_AST_PWD --artifactoRepoUrl $urlToPublish\
-  --dispatchSecretName GH_DISPATCH_PAT --repoReadSecretName GH_PAT \
-  --repo $ingestRepo --accessToken $WORKFLOW_PAT
+mod-connect github --fromCsv $my-csv \ 
+  --publishUserSecretName PUBLISH_AST_USER \
+  --publishPwdSecretName PUBLISH_AST_PWD \
+  --artifactoRepoUrl $urlToPublish \
+  --dispatchSecretName GH_DISPATCH_PAT \
+  --repoReadSecretName GH_PAT \
+  --repo $ingestRepo \
+  --accessToken $WORKFLOW_PAT
 ```
 
+## Development
+
+_If you wish to contribute to this project, please follow these instructions._
+
+### Prerequisites
+
+In order to build this project you will need to have:
+
+* Java 8 or higher installed on your machine
+* [Docker running](https://www.docker.com/products/docker-desktop/) (for the tests)
+
+### How to build and run `mod-connect` locally
+
+1. Clone the project to your machine:
+
+```shell
+git clone git@github.com:moderneinc/mod-connect.git
+```
+
+2. Run the following command to build the project. This will compile the project, run the tests, and create a zip file in the `build/distributions` directory:
+
+```shell
+./gradlew build
+```
+
+3. With the zip file created, unzip it by running:
+
+```shell
+unzip build/distributions/mod-connect.zip
+```
+
+4. You should now have the latest build of the `mod-connect` tool locally!
+
+```shell
+cd mod-connect/bin
+./mod-connect help
+```

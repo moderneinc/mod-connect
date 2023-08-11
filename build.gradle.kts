@@ -62,7 +62,7 @@ dependencies {
 
     runtimeOnly("org.slf4j:slf4j-nop:latest.release")
     implementation("org.apache.commons:commons-lang3:latest.release")
-    implementation("com.konghq:unirest-java:3.14.2") //to support Java 8
+    implementation("com.konghq:unirest-java:3.14.2") // To support Java 8
     implementation ("commons-io:commons-io:latest.release")
 
     implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
@@ -139,7 +139,7 @@ tasks.withType<Tar> {
 
 tasks.withType<CreateStartScripts>{
     doLast {
-        //solves the windows problem with the input line being too long
+        // Solves the windows problem with the input line being too long
         val windowsTemplate = windowsScript.readText()
         val classpath = windowsTemplate.lines().find { it.startsWith("set CLASSPATH=") }.orEmpty()
         windowsScript
