@@ -57,7 +57,13 @@ scmHost, repoName, branch, mavenTool, gradleTool, jdkTool, repoStyle, repoBuildA
 Once you've created the `repos.csv` file, you can set up the ingestion pipeline by running:
 
 ````shell
-mod-connect jenkins --fromCsv repos.csv --jenkinsUser $JENKINS_USER --jenkinsPwd $JENKINS_PWD --publishUrl $ARTIFACTORY_REPO_URL --publishCredsId artifactCreds --gitCredsId myGitCreds --controllerUrl=$JENKINS_URL
+mod-connect jenkins --fromCsv repos.csv \
+  --jenkinsUser $JENKINS_USER \
+  --jenkinsPwd $JENKINS_PWD \
+  --publishUrl $ARTIFACTORY_REPO_URL \
+  --publishCredsId artifactCreds \
+  --gitCredsId myGitCreds \
+  --controllerUrl $JENKINS_URL
 ````
 
 **Note**: You can specify defaults for the repositories in your `repos.csv` file by using the `--defaultMaven`, `--defaultGradle`, and `--defaultJdk` options. If you include those in your command, the defaults you specify for those parameters will be used when a row in your `repos.csv` does not include `mavenTool`, `gradleTool`, or `jdkTool` respectively.
@@ -71,8 +77,10 @@ This command will create a GitHub workflow that builds and publishes LST artifac
 Please run the following command:
 
 ```shell
-mod-connect github --path $my-repo-folder\
- --publishUserSecretName $ghSecretUserToPublish --publishPwdSecretName $ghSecretPwdToPublish --publishUrl $urlToPublish` 
+mod-connect github --path $my-repo-folder \
+ --publishUserSecretName $ghSecretUserToPublish \
+ --publishPwdSecretName $ghSecretPwdToPublish \
+ --publishUrl $urlToPublish` 
 ```
 
 #### If you want to ingest a mass number of repositories
@@ -109,10 +117,14 @@ repoName, branch, javaVersion, style, repoBuildAction, skip, skipReason
 5. Run the following command:
 
 ```shell
-mod-connect github --fromCsv $my-csv\ 
-  --publishUserSecretName PUBLISH_AST_USER --publishPwdSecretName PUBLISH_AST_PWD --artifactoRepoUrl $urlToPublish\
-  --dispatchSecretName GH_DISPATCH_PAT --repoReadSecretName GH_PAT \
-  --repo $ingestRepo --accessToken $WORKFLOW_PAT
+mod-connect github --fromCsv $my-csv \ 
+  --publishUserSecretName PUBLISH_AST_USER \
+  --publishPwdSecretName PUBLISH_AST_PWD \
+  --artifactoRepoUrl $urlToPublish \
+  --dispatchSecretName GH_DISPATCH_PAT \
+  --repoReadSecretName GH_PAT \
+  --repo $ingestRepo \
+  --accessToken $WORKFLOW_PAT
 ```
 
 ## Development
