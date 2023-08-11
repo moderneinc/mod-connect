@@ -25,7 +25,7 @@ import java.io.StringWriter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ConnectTest {
-    CommandLine cmd = new CommandLine(new Connect());
+    final CommandLine cmd = new CommandLine(new Connect());
     StringWriter sw;
 
     @BeforeEach

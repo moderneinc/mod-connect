@@ -25,6 +25,11 @@ public final class TextBlock {
         int bufferSize = 1024;
         char[] buffer = new char[bufferSize];
         StringBuilder out = new StringBuilder();
+
+        if (resource == null) {
+            throw new IllegalStateException("Resource is null");
+        }
+
         Reader in = new InputStreamReader(TextBlock.class.getClassLoader().getResourceAsStream(resource),
                 StandardCharsets.UTF_8);
         try {

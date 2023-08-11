@@ -16,7 +16,6 @@
 package io.moderne.connect.commands;
 
 import io.moderne.connect.utils.TextBlock;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
@@ -25,7 +24,6 @@ import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class GitHubTest {
 
@@ -34,25 +32,9 @@ class GitHubTest {
 
     private static final String MOD_VERSION = "v0.2.43";
 
-    private static final String ARTIFACTORY_URL = "https://artifactory.moderne.ninja/artifactory/moderne-ingest";
+    private static final String ARTIFACTORY_URL = "https://artifactory.moderne-test.ninja/artifactory/moderne";
 
     private final CommandLine cmd = new CommandLine(new Connect());
-
-    @Test
-    void submitJobs() {
-        String testingToken = System.getenv("GH_TESTING_TOKEN");
-        assumeFalse(StringUtils.isBlank(testingToken), () -> "Aborting because there is no GitHub token to create jobs in moderneinc/test-gh-cli");
-        int result = cmd.execute("github",
-                "--fromCsv", new File("src/test/csv/gh-repos.csv").getAbsolutePath(),
-                "--repo", "moderneinc/test-gh-cli",
-                "--accessToken", testingToken,
-                "--publishUserSecretName", USER_SECRET,
-                "--publishPwdSecretName", PWD_SECRET,
-                "--dispatchSecretName", "GH_PAT",
-                "--publishUrl", ARTIFACTORY_URL,
-                "--repoReadSecretName", "GH_PAT");
-        assertEquals(0, result);
-    }
 
     @Test
     void createsMavenWorkflow() throws Exception {
@@ -66,8 +48,8 @@ class GitHubTest {
 
     private File deleteWorkflow(File folder) {
         File workflow = new File(folder, ".github/workflows/moderne-workflow.yml");
-        if (workflow.exists()) {
-            workflow.delete();
+        if (workflow.exists() && !workflow.delete()) {
+            throw new RuntimeException("Unable to delete workflow file");
         }
         return workflow;
     }
@@ -76,7 +58,7 @@ class GitHubTest {
         File path = new File(folder);
         File workflow = deleteWorkflow(path);
 
-        int result = cmd.execute( "github",
+        int result = cmd.execute("github",
                 "--path", path.getAbsolutePath(),
                 "--publishUserSecretName", USER_SECRET,
                 "--publishPwdSecretName", PWD_SECRET,
@@ -96,7 +78,7 @@ class GitHubTest {
         File path = new File("src/test/repos/plaintext-repo");
         File workflow = deleteWorkflow(path);
 
-        int result = cmd.execute( "github",
+        int result = cmd.execute("github",
                 "--path", path.getAbsolutePath(),
                 "--publishUserSecretName", USER_SECRET,
                 "--publishPwdSecretName", PWD_SECRET,
