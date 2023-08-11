@@ -151,7 +151,7 @@ tasks.withType<CreateStartScripts>{
 
 distributions {
     main {
-        distributionBaseName.set("moderne-connect")
+        distributionBaseName.set("mod-connect")
     }
 }
 
