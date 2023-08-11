@@ -16,7 +16,7 @@ jobs:
       - uses: moderneinc/moderne-publish-action@v0.1.8
         with:
           version: %s
-          publishUrl: https://artifactory.moderne.ninja/artifactory/moderne-ingest
+          publishUrl: https://artifactory.moderne-test.ninja/artifactory/moderne
           publishUser: ${{ secrets.AST_PUBLISH_USERNAME }}
           publishPwd: ${{ secrets.AST_PUBLISH_PASSWORD }}
           additionalBuildArgs: ''

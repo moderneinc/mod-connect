@@ -48,6 +48,7 @@ class JenkinsTest {
     private static String jenkinsHost;
     private String apiToken;
 
+    @SuppressWarnings("resource")
     @Container
     private final GenericContainer<?> jenkinsContainer = new GenericContainer<>(
             new ImageFromDockerfile()
@@ -112,7 +113,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsWithPassword() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -133,7 +134,7 @@ class JenkinsTest {
 
     @Test
     void submitJobWithMavenSettings() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -155,7 +156,7 @@ class JenkinsTest {
 
     @Test
     void submitJobWithGradlePluginVersion() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -177,7 +178,7 @@ class JenkinsTest {
 
     @Test
     void submitJobWithMavenPluginVersion() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -199,7 +200,7 @@ class JenkinsTest {
 
     @Test
     void submitTwoJobs() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -219,7 +220,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsWithoutCLIDownload() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -240,7 +241,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsDetectJava() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos-detect-java.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -260,7 +261,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsDetectJavaWithSupportedVersions() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos-detect-java.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -281,7 +282,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsDefaultJdk() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos-detect-java.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -302,7 +303,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsWithoutJava() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos-without-java.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -322,7 +323,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsWithCustomCLIURL() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -344,7 +345,7 @@ class JenkinsTest {
 
     @Test
     void submitJobsWithSkipSSL() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -366,7 +367,7 @@ class JenkinsTest {
 
     @Test
     void downloadsCLIWithCreds() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -388,7 +389,7 @@ class JenkinsTest {
 
     @Test
     void submitJobTwice() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -406,7 +407,7 @@ class JenkinsTest {
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
 
         // Submit the same job again, to very that it doesn't fail
-        result = cmd.execute( "jenkins",
+        result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,
@@ -425,7 +426,7 @@ class JenkinsTest {
 
     @Test
     void submitJobAndRemove() throws Exception {
-        int result = cmd.execute( "jenkins",
+        int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
                 "--jenkinsUser", JENKINS_TESTING_USER,

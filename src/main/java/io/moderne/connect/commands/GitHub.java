@@ -98,7 +98,9 @@ import java.util.concurrent.Callable;
                 "      --repoReadSecretName readSecretName")
 public class GitHub implements Callable<Integer> {
 
-    /** Required Parameters **/
+    /**
+     * Required Parameters
+     **/
     @CommandLine.Option(names = "--publishPwdSecretName", required = true,
             description = "The name of the GitHub secret that contains the password needed to upload LST artifacts to " +
                     "your artifact repository.\n" +
@@ -122,7 +124,7 @@ public class GitHub implements Callable<Integer> {
                     "GitHub repository.\n")
     private String publishUserSecretName;
 
-    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+    @CommandLine.ArgGroup(multiplicity = "1")
     private Source source;
 
     // One of these two is required
@@ -184,7 +186,9 @@ public class GitHub implements Callable<Integer> {
         Path csvFile;
     }
 
-    /** Optional Parameters **/
+    /**
+     * Optional Parameters
+     **/
     @CommandLine.Option(names = "--accessToken",
             description = "A @|bold classic|@ GitHub access token that will be used to commit files and create " +
                     "workflows (a fine-grained token won't work). This token @|italic will not|@ be used to run the " +
@@ -269,7 +273,6 @@ public class GitHub implements Callable<Integer> {
     private static final String GITHUB_WORKFLOWS_FOLDER = ".github/workflows/";
     private static final String MODERNE_DISPATCH_INGEST_WORKFLOW = GITHUB_WORKFLOWS_FOLDER + "moderne-dispatch-ingest.yml";
     private static final String MODERNE_MASS_INGEST_WORKFLOW = GITHUB_WORKFLOWS_FOLDER + "moderne-mass-ingest.yml";
-    private static final String INGEST_SCRIPT = "ingest.sh";
     private static final String WORKFLOW_TEMPLATE = ".github/minimal-cli-workflow.yml";
 
     @Override
@@ -317,8 +320,8 @@ public class GitHub implements Callable<Integer> {
                 }
                 commitFiles();
 
-                System.out.println(String.format("The repository %s workflows have been committed successfully",
-                        repository));
+                System.out.printf("The repository %s workflows have been committed successfully%n",
+                        repository);
             } else {
                 File repository = source.path.toFile();
                 if (!repository.exists()) {
@@ -332,11 +335,11 @@ public class GitHub implements Callable<Integer> {
 
                 generateWorkflowFile();
 
-                System.out.println(String.format("A new workflow has been generated in %s", source.path));
+                System.out.printf("A new workflow has been generated in %s%n", source.path);
             }
         } catch (Throwable e) {
             System.err.println("ERROR configuring GitHub.");
-            System.err.println( e.getMessage());
+            System.err.println(e.getMessage());
             if (verbose) {
                 e.printStackTrace();
             } else {
@@ -363,7 +366,9 @@ public class GitHub implements Callable<Integer> {
         Path workflowsDir = Files.createDirectories(new File(source.path.toFile(), GITHUB_WORKFLOWS_FOLDER).toPath());
 
         File workflowFile = new File(workflowsDir.toFile(), "moderne-workflow.yml");
-        workflowFile.createNewFile();
+        if (!workflowFile.exists() && !workflowFile.createNewFile()) {
+            throw new RuntimeException("Unable to create workflow file");
+        }
         try (PrintWriter out = new PrintWriter(workflowFile)) {
             out.print(workflow);
         }
@@ -385,7 +390,7 @@ public class GitHub implements Callable<Integer> {
                         toBase64(String.format(toString(MODERNE_DISPATCH_INGEST_WORKFLOW),
                                 repoReadSecretName, cliVersion, publishUrl, publishUserSecretName, publishPwdSecretName)),
                         toBase64(String.format(toString(MODERNE_MASS_INGEST_WORKFLOW), apiURL, repository, dispatchSecretName)),
-                        fromResourcetoBase64(".github/workflows/" + INGEST_SCRIPT),
+                        fromResourcetoBase64(),
                         toBase64(new String(Files.readAllBytes(source.csvFile))),
                         lastCommit())).asString();
 
@@ -404,7 +409,7 @@ public class GitHub implements Callable<Integer> {
         if (!lastCommitResponse.isSuccess()) {
             throw new RuntimeException(
                     String.format("[ERROR] It is not possible to resolve the last commit for "
-                            + "the repository %s and branch %s. Error code %s with message %s", repository, branch,
+                                    + "the repository %s and branch %s. Error code %s with message %s", repository, branch,
                             lastCommitResponse.getStatus(), lastCommitResponse.getBody()));
         }
 
@@ -439,12 +444,18 @@ public class GitHub implements Callable<Integer> {
     private String toString(String resource) throws IOException {
         InputStream input = GitHub.class.getClassLoader()
                 .getResourceAsStream(resource);
+        if (input == null) {
+            throw new IOException("Resource not found: " + resource);
+        }
         return new String(IOUtils.toByteArray(input));
     }
 
-    private String fromResourcetoBase64(String resource) throws IOException {
+    private String fromResourcetoBase64() throws IOException {
         InputStream input = GitHub.class.getClassLoader()
-                .getResourceAsStream(resource);
+                .getResourceAsStream(".github/workflows/ingest.sh");
+        if (input == null) {
+            throw new IOException("Resource not found: .github/workflows/ingest.sh");
+        }
         return Base64.getEncoder().encodeToString(IOUtils.toByteArray(input));
     }
 

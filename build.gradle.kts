@@ -103,6 +103,7 @@ java {
 tasks {
     compileJava {
         options.encoding = "UTF-8"
+        options.compilerArgs.add("-Xlint:unchecked")
         options.compilerArgs.add("-parameters")
         // Pass group & name to PicoCLI annotation processor as per https://picocli.info/#_using_build_tools
         options.compilerArgs.add("-Aproject=${project.group}/${project.name}")
