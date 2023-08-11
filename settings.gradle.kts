@@ -1,4 +1,4 @@
-rootProject.name = "moderne-connect"
+rootProject.name = "mod-connect"
 
 pluginManagement {
     repositories {
