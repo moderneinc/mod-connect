@@ -28,10 +28,10 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 19
-      - name: build
+          java-version: 17
+      - name: Builds
         timeout-minutes: 20
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v2.4.2
         with:
           arguments: ${{ env.GRADLE_SWITCHES }} license build
       - name: Upload build reports
