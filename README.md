@@ -1,6 +1,8 @@
 # mod-connect
 
-`mod-connect` is a CLI tool used to create ingestion pipelines that will regularly build and publish LST artifacts to your artifact repository. Setting up these pipelines _will not_ affect or require changes to your existing workflows or pipelines.
+`mod-connect` is a CLI tool used to create ingestion pipelines that will regularly build and publish LST artifacts to your artifact repository. This will enable the [Moderne agent](https://docs.moderne.io/architecture-readme/architecture#moderne-agent) to pick up the LSTs so that they can be used in the [Moderne platform](https://docs.moderne.io/) to run recipes against.
+
+Setting up these pipelines _will not_ affect or require changes to your existing workflows or pipelines.
 
 ## Prerequisites
 
