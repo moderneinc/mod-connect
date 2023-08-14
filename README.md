@@ -2,7 +2,7 @@
 
 `mod-connect` is a CLI tool used to create ingestion pipelines that will regularly build and publish LST artifacts to your artifact repository. Setting up these pipelines _will not_ affect or require changes to your existing workflows or pipelines.
 
-## Pre-requisites
+## Prerequisites
 
 * You will need to have Java 8 or higher installed to build or run this tool.
 
