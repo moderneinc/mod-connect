@@ -30,7 +30,7 @@
         </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@3691.v28b_14c465a_b_b_">
-        <script>
+        <script><![CDATA[
         pipeline {
             agent any
             options {
@@ -46,7 +46,7 @@
                 }
                 stage('Download CLI') {
                     steps {
-                        sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.2.43/moderne-cli-linux-v0.2.43 &gt; mod"
+                        sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.2.43/moderne-cli-linux-v0.2.43 > mod"
                         sh "chmod 755 mod"
                     }
                 }
@@ -68,7 +68,7 @@
                 }
             }
         }
-        </script>
+        ]]></script>
         <sandbox>true</sandbox>
     </definition>
     <triggers/>
