@@ -30,7 +30,7 @@
         </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@3691.v28b_14c465a_b_b_">
-        <script>
+        <script><![CDATA[
         pipeline {
             agent any
             options {
@@ -69,7 +69,7 @@
                 }
             }
         }
-        </script>
+        ]]></script>
         <sandbox>true</sandbox>
     </definition>
     <triggers/>
