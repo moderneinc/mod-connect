@@ -30,9 +30,9 @@
         </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@%s">
-        <script>
-        %s
-        </script>
+        <script><![CDATA[
+%s
+        ]]></script>
         <sandbox>true</sandbox>
     </definition>
     <triggers/>

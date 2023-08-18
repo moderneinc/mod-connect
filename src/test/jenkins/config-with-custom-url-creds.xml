@@ -30,7 +30,7 @@
         </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@3691.v28b_14c465a_b_b_">
-        <script>
+        <script><![CDATA[
         pipeline {
             agent any
             options {
@@ -47,7 +47,7 @@
                 stage('Download CLI') {
                     steps {
                         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'downloadCreds', usernameVariable: 'CLI_DOWNLOAD_CRED_USR', passwordVariable: 'CLI_DOWNLOAD_CRED_PWD']]) {
-                            sh "curl --user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} --request GET https://acme.com/moderne-cli &gt; mod"
+                            sh "curl --user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} --request GET https://acme.com/moderne-cli > mod"
                             sh "chmod 755 mod"
                         }
                     }
@@ -70,7 +70,7 @@
                 }
             }
         }
-        </script>
+        ]]></script>
         <sandbox>true</sandbox>
     </definition>
     <triggers/>
