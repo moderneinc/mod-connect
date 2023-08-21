@@ -316,6 +316,8 @@ public class Jenkins implements Callable<Integer> {
     enum Templates {
         DOWNLOAD_WITHOUT_CREDENTIALS("cli/jenkins/pipeline_download.groovy.template"),
         DOWNLOAD_WITH_CREDENTIALS("cli/jenkins/pipeline_download_creds.groovy.template"),
+        DOWNLOAD_WITHOUT_CREDENTIALS_WINDOWS("cli/jenkins/pipeline_download_windows.groovy.template"),
+        DOWNLOAD_WITH_CREDENTIALS_WINDOWS("cli/jenkins/pipeline_download_creds_windows.groovy.template"),
 
         FLOW_DEFINITION("cli/jenkins/flow_definition.xml.template"),
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
@@ -323,6 +325,7 @@ public class Jenkins implements Callable<Integer> {
         PIPELINE("cli/jenkins/pipeline.groovy.template"),
 
         PUBLISH_CREDENTIALS("cli/jenkins/pipeline_credentials.groovy.template"),
+        PUBLISH_CREDENTIALS_WINDOWS("cli/jenkins/pipeline_credentials_windows.groovy.template"),
         MAVEN_SETTINGS("cli/jenkins/pipeline_maven_settings.groovy.template"),
 
         STAGE_CHECKOUT("cli/jenkins/pipeline_stage_checkout.groovy.template"),
@@ -605,9 +608,13 @@ public class Jenkins implements Callable<Integer> {
         }
         final String downloadCommand;
         if (StringUtils.isBlank(downloadCLICreds)) {
-            downloadCommand = Templates.DOWNLOAD_WITHOUT_CREDENTIALS.format(downloadURL);
+            downloadCommand = "windows".equals(platform) ?
+                    Templates.DOWNLOAD_WITHOUT_CREDENTIALS_WINDOWS.format(downloadURL) :
+                    Templates.DOWNLOAD_WITHOUT_CREDENTIALS.format(downloadURL);
         } else {
-            downloadCommand = Templates.DOWNLOAD_WITH_CREDENTIALS.format(downloadCLICreds, downloadURL);
+            downloadCommand = "windows".equals(platform) ?
+                    Templates.DOWNLOAD_WITH_CREDENTIALS_WINDOWS.format(downloadURL) :
+                    Templates.DOWNLOAD_WITH_CREDENTIALS.format(downloadCLICreds, downloadURL);
         }
         return Templates.STAGE_DOWNLOAD.format(downloadCommand);
     }
@@ -660,21 +667,30 @@ public class Jenkins implements Callable<Integer> {
     }
 
     private String createShell(String repoStyle, String repoBuildAction, boolean prependJavaVersion) {
+        boolean isWindowsPlatform = "windows".equals(platform);
         String command = "";
         if (downloadCLI) {
-            command += "./";
+            command += isWindowsPlatform ? ".\\\\" : "./";
         }
-        command += String.format("mod publish " +
+        command += String.format("%s publish " +
                         "--path . " +
                         "--publishUrl %s " +
-                        "--publishUser ${ARTIFACTS_PUBLISH_CRED_USR} " +
-                        "--publishPwd ${ARTIFACTS_PUBLISH_CRED_PWD} " +
+                        "--publishUser %s " +
+                        "--publishPwd %s " +
                         "--desiredStyle=\"%s\" " +
                         "--additionalBuildArgs=\"%s\" " +
                         "--skipSSL=\"%s\" " +
                         "--verbose " +
                         "%s",
-                publishUrl, repoStyle, repoBuildAction, skipSSL, commandSuffix);
+                isWindowsPlatform ? "mod.exe" : "mod",
+                publishUrl,
+                isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
+                isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_PWD" : "${ARTIFACTS_PUBLISH_CRED_PWD}",
+                repoStyle,
+                repoBuildAction,
+                skipSSL,
+                commandSuffix
+        );
 
         if (!StringUtils.isBlank(mirrorUrl)) {
             command += " --mirrorUrl " + mirrorUrl;
@@ -689,19 +705,33 @@ public class Jenkins implements Callable<Integer> {
         }
 
         // Always wrap in publish credentials block
-        String commandInBlock = Templates.PUBLISH_CREDENTIALS.format(publishCredsId, command);
+        String commandInBlock = isWindowsPlatform ?
+                Templates.PUBLISH_CREDENTIALS_WINDOWS.format(publishCredsId, command) :
+                Templates.PUBLISH_CREDENTIALS.format(publishCredsId, command);
         if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
             // Conditionally wrap in maven settings block
             commandInBlock = Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, commandInBlock);
         }
 
         if (prependJavaVersion) {
-            commandInBlock = "                sh 'java -version'\n" + commandInBlock;
+            if (isWindowsPlatform) {
+                commandInBlock = "                powershell 'java -version'\n" + commandInBlock;
+            } else {
+                commandInBlock = "                sh 'java -version'\n" + commandInBlock;
+            }
         }
         if (downloadCLI) {
-            commandInBlock = "                sh './mod version'\n" + commandInBlock;
+            if (isWindowsPlatform) {
+                commandInBlock = "                powershell '.\\\\mod.exe version'\n" + commandInBlock;
+            } else {
+                commandInBlock = "                sh './mod version'\n" + commandInBlock;
+            }
         } else {
-            commandInBlock = "                sh 'mod version'\n" + commandInBlock;
+            if (isWindowsPlatform) {
+                commandInBlock = "                powershell 'mod.exe version'\n" + commandInBlock;
+            } else {
+                commandInBlock = "                sh 'mod version'\n" + commandInBlock;
+            }
         }
         return commandInBlock;
     }
