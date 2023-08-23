@@ -30,10 +30,13 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testcontainers
 class JenkinsTest {
@@ -477,6 +480,28 @@ class JenkinsTest {
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
         assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-agent.xml").toPath()));
+        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
+
+    @Test
+    void submitJobUsingWindowsPlatform() throws Exception {
+        int result = cmd.execute("jenkins",
+                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
+                "--controllerUrl", jenkinsHost,
+                "--platform", "windows",
+                "--jenkinsUser", JENKINS_TESTING_USER,
+                "--apiToken", apiToken,
+                "--publishCredsId", ARTIFACT_CREDS,
+                "--gitCredsId", GIT_CREDS,
+                "--publishUrl", ARTIFACTORY_URL);
+        assertEquals(0, result);
+
+        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
+                .asString().isSuccess()));
+
+        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
+        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        String expectedJob = Files.readString(Paths.get("src/test/jenkins/config-windows.xml"));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
 }
