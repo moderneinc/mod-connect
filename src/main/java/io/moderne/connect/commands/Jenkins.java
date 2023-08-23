@@ -609,11 +609,11 @@ public class Jenkins implements Callable<Integer> {
         }
         final String downloadCommand;
         if (StringUtils.isBlank(downloadCLICreds)) {
-            downloadCommand = PLATFORM_WINDOWS.equals(platform) ?
+            downloadCommand = isWindowsPlatform() ?
                     Templates.DOWNLOAD_WITHOUT_CREDENTIALS_WINDOWS.format(downloadURL) :
                     Templates.DOWNLOAD_WITHOUT_CREDENTIALS.format(downloadURL);
         } else {
-            downloadCommand = PLATFORM_WINDOWS.equals(platform) ?
+            downloadCommand = isWindowsPlatform() ?
                     Templates.DOWNLOAD_WITH_CREDENTIALS_WINDOWS.format(downloadURL) :
                     Templates.DOWNLOAD_WITH_CREDENTIALS.format(downloadCLICreds, downloadURL);
         }
@@ -668,7 +668,7 @@ public class Jenkins implements Callable<Integer> {
     }
 
     private String createShell(String repoStyle, String repoBuildAction, boolean prependJavaVersion) {
-        boolean isWindowsPlatform = PLATFORM_WINDOWS.equals(platform);
+        boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
         if (downloadCLI) {
             command += isWindowsPlatform ? ".\\\\" : "./";
@@ -756,4 +756,7 @@ public class Jenkins implements Callable<Integer> {
                 pipeline);
     }
 
+    private boolean isWindowsPlatform() {
+        return PLATFORM_WINDOWS.equals(platform);
+    }
 }
