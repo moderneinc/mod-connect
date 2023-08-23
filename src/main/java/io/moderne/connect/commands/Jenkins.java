@@ -306,6 +306,7 @@ public class Jenkins implements Callable<Integer> {
 
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
 
+    private static final String PLATFORM_WINDOWS = "windows";
     private static final String CLOUDBEES_FOLDER_PLUGIN = "cloudbees-folder";
     private static final String WORKFLOW_JOB_PLUGIN = "workflow-job";
     private static final String PIPELINE_MODEL_DEFINITION_PLUGIN = "pipeline-model-definition";
@@ -608,11 +609,11 @@ public class Jenkins implements Callable<Integer> {
         }
         final String downloadCommand;
         if (StringUtils.isBlank(downloadCLICreds)) {
-            downloadCommand = "windows".equals(platform) ?
+            downloadCommand = PLATFORM_WINDOWS.equals(platform) ?
                     Templates.DOWNLOAD_WITHOUT_CREDENTIALS_WINDOWS.format(downloadURL) :
                     Templates.DOWNLOAD_WITHOUT_CREDENTIALS.format(downloadURL);
         } else {
-            downloadCommand = "windows".equals(platform) ?
+            downloadCommand = PLATFORM_WINDOWS.equals(platform) ?
                     Templates.DOWNLOAD_WITH_CREDENTIALS_WINDOWS.format(downloadURL) :
                     Templates.DOWNLOAD_WITH_CREDENTIALS.format(downloadCLICreds, downloadURL);
         }
@@ -667,7 +668,7 @@ public class Jenkins implements Callable<Integer> {
     }
 
     private String createShell(String repoStyle, String repoBuildAction, boolean prependJavaVersion) {
-        boolean isWindowsPlatform = "windows".equals(platform);
+        boolean isWindowsPlatform = PLATFORM_WINDOWS.equals(platform);
         String command = "";
         if (downloadCLI) {
             command += isWindowsPlatform ? ".\\\\" : "./";
