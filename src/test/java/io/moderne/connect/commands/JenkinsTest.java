@@ -243,68 +243,6 @@ class JenkinsTest {
     }
 
     @Test
-    void submitJobsDetectJava() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos-detect-java.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-detect-java.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobsDetectJavaWithSupportedVersions() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos-detect-java.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--supportedJdkVersions", "8,11,17");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-detect-java-with-supported.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobsDefaultJdk() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos-detect-java.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--defaultJdkVersion", "8");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-defaultJdk.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
     void submitJobsWithoutJava() throws Exception {
         int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos-without-java.csv").getAbsolutePath(),

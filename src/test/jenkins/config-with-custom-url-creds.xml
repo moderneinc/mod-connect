@@ -53,9 +53,6 @@
                     }
                 }
                 stage('Publish') {
-                    tools {
-                        jdk 'java11'
-                    }
                     steps {
                         sh './mod version'
                         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {

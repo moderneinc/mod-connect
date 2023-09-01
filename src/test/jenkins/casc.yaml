@@ -21,16 +21,6 @@ credentials:
               username: "${JENKINS_GIT_USERNAME}"
               password: "${JENKINS_GIT_PASSWORD}"
               description: "Username/Password to clone repos"
-tool:
-  maven:
-    installations:
-      - name: java11
-        home: "/jdk"
-        properties:
-          - installSource:
-              installers:
-                - adoptOpenJdkInstaller:
-                    id: "jdk-11.0.14+9"
 unclassified:
   location:
     url: http://server_ip:8080/

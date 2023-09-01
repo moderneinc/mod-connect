@@ -78,7 +78,7 @@ public class Jenkins implements Callable<Integer> {
             required = true,
             description = "The location of the CSV file containing the list of repositories that should be ingested. " +
                     "One Jenkins Job will be made for each repository. Follows the schema of:\n" +
-                    "\n" +
+                    "\n" + // TODO Remove CSV columns after https://github.com/moderneinc/jenkins-ingest/pull/161
                     "@|bold [scmHost,repoName,repoBranch,mavenTool,gradleTool,jdkTool,desiredStyle,additionalBuildArgs,skip,skipReason]|@\n" +
                     "\n" +
                     "* @|bold scmHost|@: @|italic Optional|@ - The URL of the source code management tool where the " +
@@ -104,9 +104,7 @@ public class Jenkins implements Callable<Integer> {
                     "run Gradle jobs. Specified in the Jenkins Global Tool Configuration page:\n" +
                     "    {controllerUrl}/manage/configureTools/\n" +
                     "\n" +
-                    "* @|bold jdkTool|@: @|italic Optional|@ - The name of the JDK tool that should be used to " +
-                    "run JDK jobs. Specified in the Jenkins Global Tool Configuration page:\n" +
-                    "    {controllerUrl}/manage/configureTools/\n" +
+                    "* @|bold jdkTool|@: @|italic Optional|@ - No longer in use.\n" +
                     "\n" +
                     "* @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during ingest.\n" +
                     "\n" +
@@ -125,8 +123,8 @@ public class Jenkins implements Callable<Integer> {
                     "\n\n" +
                     "@|bold CSV Example|@:\n" +
                     "\n" +
-                    "  ,openrewrite/rewrite-spring,main,,gradle,java17,,,,\n" +
-                    "  ,openrewrite/rewrite-java-migration,main,,gradle,java17,,,,\n" +
+                    "  ,openrewrite/rewrite-spring,main,,gradle,,,,,\n" +
+                    "  ,openrewrite/rewrite-java-migration,main,,gradle,,,,,\n" +
                     "  additional rows...\n"
     )
     private Path csvFile;
@@ -179,11 +177,6 @@ public class Jenkins implements Callable<Integer> {
                     "    {controllerUrl}/manage/configureTools/\n\n" +
                     "@|bold Example|@: gradle7.4.2\n")
     private String defaultGradle;
-
-    @CommandLine.Option(names = "--defaultJdkVersion",
-            description = "If the Java version can not be detected, fallback to using this version of Java instead.\n\n" +
-                    "@|bold Example|@: 11\n")
-    private String defaultJdkVersion;
 
     @CommandLine.Option(names = "--defaultMaven",
             description = "If no Maven tool is specified for a repository in the CSV file, the Jenkins job will attempt " +
@@ -253,11 +246,6 @@ public class Jenkins implements Callable<Integer> {
             description = "If this parameter is included, SSL verification will be skipped on the generated jobs.\n\n" +
                     "@|bold Default|@: ${DEFAULT-VALUE}\n")
     protected boolean skipSSL;
-
-    @CommandLine.Option(names = "--supportedJdkVersions",
-            description = "The supported Java versions to detect. Bumps any detected version to the next supported version.\n\n" +
-                    "@|bold Example|@: 8,11,17\n")
-    private String supportedJdkVersions;
 
     @CommandLine.ArgGroup(multiplicity = "1")
     private UserSecret userSecret;
@@ -386,7 +374,7 @@ public class Jenkins implements Callable<Integer> {
                 String branch = values[2];
                 String mavenTool = values[3];
                 String gradleTool = values[4];
-                String jdkTool = values[5];
+                // String jdkTool = values[5]; // TODO Remove jdkTool https://github.com/moderneinc/jenkins-ingest/pull/161
                 String repoStyle = values[6];
                 String repoBuildAction = values[7];
                 String repoSkip = values[8];
@@ -437,7 +425,7 @@ public class Jenkins implements Callable<Integer> {
                 // Create the Jenkins job
                 String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredentialsId);
                 String stageDownload = createStageDownload();
-                String stagePublish = createStagePublish(jdkTool, mavenTool, gradleTool, repoStyle, repoBuildAction);
+                String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
                 String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
                 String flowDefinition = createFlowDefinition(plugins, pipeline);
 
@@ -620,30 +608,8 @@ public class Jenkins implements Callable<Integer> {
         return Templates.STAGE_DOWNLOAD.format(downloadCommand);
     }
 
-    private String createStagePublish(String jdkTool, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
-        final String toolExpressionJava;
-        boolean detectJava = "java".equalsIgnoreCase(jdkTool);
-        if (detectJava) {
-            StringBuilder modDetectJava = new StringBuilder("mod detect java");
-            if (!StringUtils.isBlank(defaultJdkVersion)) {
-                modDetectJava.append(" --defaultVersion ").append(defaultJdkVersion);
-            }
-            if (!StringUtils.isBlank(supportedJdkVersions)) {
-                // Append the supported JDK versions to the mod detect java command
-                for (String version : supportedJdkVersions.split(",")) {
-                    modDetectJava.append(" --supportedVersions ").append(version);
-                }
-            }
-            toolExpressionJava = String.format("jdk \"${'java' + sh(returnStdout: true, script: '%s').trim()}\"", modDetectJava);
-        } else if (!StringUtils.isBlank(jdkTool)) {
-            // Use the hardcoded CSV column value as a Jenkins Java tool installation name
-            toolExpressionJava = String.format("jdk '%s'", jdkTool);
-        } else {
-            // Do not provision Java through Jenkins tools
-            toolExpressionJava = "";
-        }
+    private String createStagePublish(String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
         String toolsConcatenated = Stream.of(
-                        toolExpressionJava,
                         generateSingleToolExpr("maven", defaultMaven, mavenTool),
                         generateSingleToolExpr("gradle", defaultGradle, gradleTool))
                 .filter(str -> !StringUtils.isBlank(str))
@@ -653,7 +619,7 @@ public class Jenkins implements Callable<Integer> {
             toolsBlock = Templates.TOOLS.format(toolsConcatenated);
         }
 
-        String publishCommand = createShell(repoStyle, repoBuildAction, detectJava);
+        String publishCommand = createShell(repoStyle, repoBuildAction);
         return Templates.STAGE_PUBLISH.format(toolsBlock, publishCommand);
     }
 
@@ -667,7 +633,7 @@ public class Jenkins implements Callable<Integer> {
         return "";
     }
 
-    private String createShell(String repoStyle, String repoBuildAction, boolean prependJavaVersion) {
+    private String createShell(String repoStyle, String repoBuildAction) {
         boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
         if (downloadCLI) {
@@ -714,13 +680,6 @@ public class Jenkins implements Callable<Integer> {
             commandInBlock = Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, commandInBlock);
         }
 
-        if (prependJavaVersion) {
-            if (isWindowsPlatform) {
-                commandInBlock = "                powershell 'java -version'\n" + commandInBlock;
-            } else {
-                commandInBlock = "                sh 'java -version'\n" + commandInBlock;
-            }
-        }
         if (downloadCLI) {
             if (isWindowsPlatform) {
                 commandInBlock = "                powershell '.\\\\mod.exe version'\n" + commandInBlock;

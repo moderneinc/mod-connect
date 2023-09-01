@@ -52,7 +52,6 @@
                 }
                 stage('Publish') {
                     tools {
-                        jdk 'java17'
                         gradle 'gradle'
                     }
                     steps {
