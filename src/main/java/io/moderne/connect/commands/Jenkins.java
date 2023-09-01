@@ -342,8 +342,7 @@ public class Jenkins implements Callable<Integer> {
         }
 
         final Map<String, String> plugins;
-        try {
-            ExecutorService executorService = Executors.newFixedThreadPool(50);
+        try (ExecutorService executorService = Executors.newFixedThreadPool(50)) {
             plugins = resolveJenkinsPlugins();
 
             if (!StringUtils.isBlank(folderName)) {
