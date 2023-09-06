@@ -654,14 +654,13 @@ public class Jenkins implements Callable<Integer> {
         return Templates.PUBLISH_CREDENTIALS.format(publishCredsId, shell);
     }
 
-
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
         if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             prefix += isWindowsPlatform ? ".\\\\" : "./";
         }
-        String command = String.format("%s%s build .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        String command = String.format("%s%s build . --no-download", prefix, isWindowsPlatform ? "mod.exe" : "mod");
         if (!StringUtils.isBlank(activeStyle)) {
             command += " --active-style " + activeStyle;
         }
@@ -696,7 +695,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
-        String command = String.format("%s%s publish . ", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        String command = String.format("%s%s publish .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 

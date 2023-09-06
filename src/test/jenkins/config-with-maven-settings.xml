@@ -50,7 +50,7 @@
                             sh 'mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
                         }
                         configFileProvider([configFile(fileId: 'maven-ingest-settings-credentials', variable: 'MODERNE_MVN_SETTINGS_XML')]) {
-                            sh 'mod build . --maven-settings ${MODERNE_MVN_SETTINGS_XML}'
+                            sh 'mod build . --no-download --maven-settings ${MODERNE_MVN_SETTINGS_XML}'
                         }
                         sh 'mod publish .'
                     }
