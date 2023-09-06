@@ -44,24 +44,13 @@
                         git (url: 'https://github.com/openrewrite/rewrite-spring.git', branch: 'main', credentialsId: 'myGitCreds')
                     }
                 }
-
-                stage('Download CLI') {
-                    steps {
-                        powershell '''
-                        $wc = New-Object System.Net.WebClient
-                        $wc.DownloadFile("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-windows/v0.3.2/moderne-cli-windows-v0.3.2", "mod.exe")
-                        '''
-                    }
-                }
-
-
                 stage('Publish') {
                     steps {
                         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                            powershell '.\\mod.exe config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user $env:ARTIFACTS_PUBLISH_CRED_USR --password $env:ARTIFACTS_PUBLISH_CRED_PWD'
+                            powershell 'mod.exe config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user $env:ARTIFACTS_PUBLISH_CRED_USR --password $env:ARTIFACTS_PUBLISH_CRED_PWD'
                         }
-                        powershell '.\\mod.exe build .'
-                        powershell '.\\mod.exe publish .'
+                        powershell 'mod.exe build .'
+                        powershell 'mod.exe publish .'
                     }
                 }
 

@@ -192,7 +192,7 @@ public class Jenkins implements Callable<Integer> {
                     "@|bold Default|@: ${DEFAULT-VALUE}\n")
     private boolean deleteSkipped;
 
-    @CommandLine.Option(names = "--downloadCLI", defaultValue = "true",
+    @CommandLine.Option(names = "--downloadCLI", defaultValue = "false",
             description = "Specifies whether or not the Moderne CLI should be downloaded at the beginning of each Jenkins Job run.\n\n" +
                     "@|bold Default|@: ${DEFAULT-VALUE}\n")
     private boolean downloadCLI;
@@ -587,7 +587,7 @@ public class Jenkins implements Callable<Integer> {
     }
 
     private String createStageDownload() {
-        if (!downloadCLI) {
+        if (!downloadCLI && StringUtils.isBlank(downloadCLIURL)) {
             return "";
         }
 
@@ -637,7 +637,7 @@ public class Jenkins implements Callable<Integer> {
     private String createConfigArtifactsCommand() {
         boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
-        if (downloadCLI) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
         command += String.format("%s config artifacts %s --user %s --password %s",
@@ -658,7 +658,7 @@ public class Jenkins implements Callable<Integer> {
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
-        if (downloadCLI) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             prefix += isWindowsPlatform ? ".\\\\" : "./";
         }
         String command = String.format("%s%s build .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
@@ -693,7 +693,7 @@ public class Jenkins implements Callable<Integer> {
     private String createPublishCommand() {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
-        if (downloadCLI) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
         String command = String.format("%s%s publish . ", prefix, isWindowsPlatform ? "mod.exe" : "mod");

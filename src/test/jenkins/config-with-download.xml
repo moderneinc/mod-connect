@@ -44,13 +44,19 @@
                         git (url: 'https://github.com/openrewrite/rewrite-spring.git', branch: 'main', credentialsId: 'myGitCreds')
                     }
                 }
+                stage('Download CLI') {
+                    steps {
+                        sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.3.2/moderne-cli-linux-v0.3.2 > mod"
+                        sh "chmod 755 mod"
+                    }
+                }
                 stage('Publish') {
                     steps {
                         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                            sh 'mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
+                            sh './mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
                         }
-                        sh 'mod build .'
-                        sh 'mod publish .'
+                        sh './mod build .'
+                        sh './mod publish .'
                     }
                 }
             }

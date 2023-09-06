@@ -223,7 +223,7 @@ class JenkinsTest {
     }
 
     @Test
-    void submitJobsWithoutCLIDownload() throws Exception {
+    void submitJobsThatDownloadCLI() throws Exception {
         int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
@@ -232,14 +232,14 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--downloadCLI=false");
+                "--downloadCLI");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
         assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-without-download.xml").toPath()));
+        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-download.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
 
