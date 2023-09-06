@@ -663,7 +663,7 @@ public class Jenkins implements Callable<Integer> {
         }
         String command = String.format("%s%s build .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
         if (!StringUtils.isBlank(activeStyle)) {
-            command += " --active-style " +  activeStyle;
+            command += " --active-style " + activeStyle;
         }
         if (!StringUtils.isBlank(additionalBuildArgs)) {
             command += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
@@ -683,7 +683,9 @@ public class Jenkins implements Callable<Integer> {
 
         // Conditionally wrap in maven settings block
         if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
-            return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, command);
+            String settings = isWindowsPlatform ? "$env:MAVEN_SETTINGS_CONFIG_FILE_ID" : "${MAVEN_SETTINGS_CONFIG_FILE_ID}";
+            String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command + " --maven-settings " + settings);
+            return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, shell);
         }
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
