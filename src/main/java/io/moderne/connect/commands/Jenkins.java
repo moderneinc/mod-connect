@@ -155,7 +155,7 @@ public class Jenkins implements Callable<Integer> {
             defaultValue = "any")
     private String agent;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.2.43",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.3.2",
             description = "The version of the Moderne CLI that should be used when running Jenkins Jobs.\n")
     private String cliVersion;
 
@@ -336,8 +336,8 @@ public class Jenkins implements Callable<Integer> {
             return 1;
         }
 
-        if (!cliVersion.startsWith("v0.2")) {
-            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v0.2");
+        if (!cliVersion.startsWith("v0.3")) {
+            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v0.3");
             return 1;
         }
 

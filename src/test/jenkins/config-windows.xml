@@ -49,7 +49,7 @@
                     steps {
                         powershell '''
                         $wc = New-Object System.Net.WebClient
-                        $wc.DownloadFile("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-windows/v0.2.43/moderne-cli-windows-v0.2.43", "mod.exe")
+                        $wc.DownloadFile("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-windows/v0.3.2/moderne-cli-windows-v0.3.2", "mod.exe")
                         '''
                     }
                 }
