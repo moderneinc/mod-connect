@@ -51,9 +51,6 @@
                     }
                 }
                 stage('Publish') {
-                    tools {
-                        jdk 'java11'
-                    }
                     steps {
                         sh './mod version'
 
