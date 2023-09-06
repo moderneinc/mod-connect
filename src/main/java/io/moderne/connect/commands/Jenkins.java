@@ -683,7 +683,7 @@ public class Jenkins implements Callable<Integer> {
 
         // Conditionally wrap in maven settings block
         if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
-            String settings = isWindowsPlatform ? "$env:MAVEN_SETTINGS_CONFIG_FILE_ID" : "${MAVEN_SETTINGS_CONFIG_FILE_ID}";
+            String settings = isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}";
             String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command + " --maven-settings " + settings);
             return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, shell);
         }
