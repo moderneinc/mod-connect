@@ -30,7 +30,7 @@ class GitHubTest {
     private static final String USER_SECRET = "AST_PUBLISH_USERNAME";
     private static final String PWD_SECRET = "AST_PUBLISH_PASSWORD";
 
-    private static final String MOD_VERSION = "v0.2.43";
+    private static final String MOD_VERSION = "v0.3.2";
 
     private static final String ARTIFACTORY_URL = "https://artifactory.moderne-test.ninja/artifactory/moderne";
 
