@@ -1,0 +1,54 @@
+---
+name: Create Jenkins jobs
+
+on:
+  workflow_dispatch:
+    inputs:
+      csvUrl:
+        description: 'CSV of Jenkins jobs to create or remove'
+        required: true
+        default: 'https://raw.githubusercontent.com/moderneinc/jenkins-ingest/main/repos.csv'
+      folder:
+        description: 'Folder to create jobs in'
+        required: true
+        default: 'cli-ingest'
+      prefix:
+        description: 'Only create jobs for repos that start with this prefix'
+        required: false
+        default: ''
+      command_suffix:
+        description: 'The suffix that should be appended to the `mod connect` command when running Jenkins Jobs'
+        required: false
+        default: ''
+
+jobs:
+  create-jenkins-jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download CSV
+        run: |
+          curl -o repos.csv ${{ inputs.csvUrl }}
+      - name: Download CLI
+        run: |
+          curl --request GET \
+            --output mod.tar.gz \
+            --url 'https://api.app.moderne.io/cli/download?operatingSystem=linux-tar' \
+            --header 'Authorization: Bearer ${{ secrets.MODERNE_ACCESS_TOKEN }}' \
+            --fail
+      - name: Run CLI
+        run: |
+          tar -zxvf mod.tar.gz
+          ./mod connect jenkins \
+            --fromCsv repos.csv \
+            --jenkinsUser ${{ secrets.JENKINS_USER }} \
+            --apiToken ${{ secrets.JENKINS_API_TOKEN }} \
+            --publishUrl http://artifactory.moderne.internal/artifactory/moderne-ingest \
+            --mirrorUrl http://artifactory.moderne.internal/artifactory/moderne-cache-3 \
+            --publishCredsId artifactory \
+            --mavenSettingsConfigFileId=maven-ingest-settings-credentials \
+            --gitCredsId jkschneider-pat \
+            --controllerUrl=https://jenkins.moderne.ninja \
+            --folder=${{ inputs.folder }} \
+            --prefix=${{ inputs.prefix }} \
+            --deleteSkipped=true \
+            ${{ inputs.command_suffix }}
