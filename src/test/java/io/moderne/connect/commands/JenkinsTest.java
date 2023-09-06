@@ -102,7 +102,8 @@ class JenkinsTest {
                 "--apiToken", apiToken,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--verbose");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")

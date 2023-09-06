@@ -314,7 +314,6 @@ public class Jenkins implements Callable<Integer> {
         PIPELINE("cli/jenkins/pipeline.groovy.template"),
 
         PUBLISH_CREDENTIALS("cli/jenkins/pipeline_credentials.groovy.template"),
-        PUBLISH_CREDENTIALS_WINDOWS("cli/jenkins/pipeline_credentials_windows.groovy.template"),
         MAVEN_SETTINGS("cli/jenkins/pipeline_maven_settings.groovy.template"),
 
         STAGE_CHECKOUT("cli/jenkins/pipeline_stage_checkout.groovy.template"),
@@ -619,9 +618,10 @@ public class Jenkins implements Callable<Integer> {
         if (!StringUtils.isBlank(toolsConcatenated)) {
             toolsBlock = Templates.TOOLS.format(toolsConcatenated);
         }
-
-        String publishCommand = createShell(repoStyle, repoBuildAction);
-        return Templates.STAGE_PUBLISH.format(toolsBlock, publishCommand);
+        return Templates.STAGE_PUBLISH.format(toolsBlock,
+                createConfigArtifactsCommand(),
+                createBuildCommand(repoStyle, repoBuildAction),
+                createPublishCommand());
     }
 
     private static String generateSingleToolExpr(String toolName, String defaultTool, String repoTool) {
@@ -634,67 +634,68 @@ public class Jenkins implements Callable<Integer> {
         return "";
     }
 
-    private String createShell(String repoStyle, String repoBuildAction) {
+    private String createConfigArtifactsCommand() {
         boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
         if (downloadCLI) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
-        command += String.format("%s publish " +
-                        "--path . " +
-                        "--publishUrl %s " +
-                        "--publishUser %s " +
-                        "--publishPwd %s " +
-                        "--desiredStyle=\"%s\" " +
-                        "--additionalBuildArgs=\"%s\" " +
-                        "--skipSSL=\"%s\" " +
-                        "--verbose " +
-                        "%s",
+        command += String.format("%s config artifacts %s --user %s --password %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 publishUrl,
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
-                isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_PWD" : "${ARTIFACTS_PUBLISH_CRED_PWD}",
-                repoStyle,
-                repoBuildAction,
-                skipSSL,
-                commandSuffix
+                isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_PWD" : "${ARTIFACTS_PUBLISH_CRED_PWD}"
         );
-
-        if (!StringUtils.isBlank(mirrorUrl)) {
-            command += " --mirrorUrl " + mirrorUrl;
+        if (skipSSL) {
+            command += " --skipSSL";
         }
-
-        if (!StringUtils.isBlank(moderneGradlePluginVersion)) {
-            command += " --gradlePluginVersion " + moderneGradlePluginVersion;
-        }
-
-        if (!StringUtils.isBlank(moderneMavenPluginVersion)) {
-            command += " --mvnPluginVersion " + moderneMavenPluginVersion;
-        }
-
         // Always wrap in publish credentials block
-        String commandInBlock = isWindowsPlatform ?
-                Templates.PUBLISH_CREDENTIALS_WINDOWS.format(publishCredsId, command) :
-                Templates.PUBLISH_CREDENTIALS.format(publishCredsId, command);
-        if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
-            // Conditionally wrap in maven settings block
-            commandInBlock = Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, commandInBlock);
+        String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
+        return Templates.PUBLISH_CREDENTIALS.format(publishCredsId, shell);
+    }
+
+
+    private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String prefix = "";
+        if (downloadCLI) {
+            prefix += isWindowsPlatform ? ".\\\\" : "./";
+        }
+        String command = String.format("%s%s build .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        if (!StringUtils.isBlank(activeStyle)) {
+            command += " --active-style " +  activeStyle;
+        }
+        if (!StringUtils.isBlank(additionalBuildArgs)) {
+            command += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
+        }
+        if (!StringUtils.isBlank(mirrorUrl)) {
+            command += " --mirror-url " + mirrorUrl;
+        }
+        if (!StringUtils.isBlank(moderneGradlePluginVersion)) {
+            command += " --gradle-plugin-version " + moderneGradlePluginVersion;
+        }
+        if (!StringUtils.isBlank(moderneMavenPluginVersion)) {
+            command += " --maven-plugin-version " + moderneMavenPluginVersion;
+        }
+        if (!StringUtils.isBlank(commandSuffix)) {
+            command += " " + commandSuffix;
         }
 
-        if (downloadCLI) {
-            if (isWindowsPlatform) {
-                commandInBlock = "                powershell '.\\\\mod.exe version'\n" + commandInBlock;
-            } else {
-                commandInBlock = "                sh './mod version'\n" + commandInBlock;
-            }
-        } else {
-            if (isWindowsPlatform) {
-                commandInBlock = "                powershell 'mod.exe version'\n" + commandInBlock;
-            } else {
-                commandInBlock = "                sh 'mod version'\n" + commandInBlock;
-            }
+        // Conditionally wrap in maven settings block
+        if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
+            return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, command);
         }
-        return commandInBlock;
+        return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
+    }
+
+    private String createPublishCommand() {
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String prefix = "";
+        if (downloadCLI) {
+            prefix = isWindowsPlatform ? ".\\\\" : "./";
+        }
+        String command = String.format("%s%s publish . ", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
     private String createPipeline(String stageCheckout, String stageDownload, String stagePublish) {

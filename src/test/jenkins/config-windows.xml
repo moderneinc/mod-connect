@@ -57,9 +57,11 @@
 
                 stage('Publish') {
                     steps {
-                        powershell '.\\mod.exe version'
                         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                            powershell '.\\mod.exe publish --path . --publishUrl https://artifactory.moderne.ninja/artifactory/moderne-ingest --publishUser $env:ARTIFACTS_PUBLISH_CRED_USR --publishPwd $env:ARTIFACTS_PUBLISH_CRED_PWD --desiredStyle="" --additionalBuildArgs="" --skipSSL="false" --verbose'
+                            powershell '.\\mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
+                            powershell '.\\mod build .'
+                            powershell '.\\mod publish .'
+
                         }
                     }
                 }
