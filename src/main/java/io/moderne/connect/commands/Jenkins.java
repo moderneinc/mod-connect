@@ -695,7 +695,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
-        String command = String.format("%s%s publish . ", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        String command = String.format("%s%s publish .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
