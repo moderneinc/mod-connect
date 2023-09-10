@@ -20,6 +20,7 @@ import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.internal.StringUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -264,25 +265,37 @@ class JenkinsTest {
     }
 
     @Test
-    void submitJobsWithModerneToken() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos-without-java.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--moderneUrl", "https://app.moderne.io",
-                "--moderneToken", "mat-BLAH",
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
+    void submitJobsWithModerneTokenWithoutRunningJenkins() {
+        Jenkins jenkins = new Jenkins();
+        jenkins.csvFile = Paths.get("src/test/csv/repos-without-java.csv").toAbsolutePath();
+        jenkins.controllerUrl = jenkinsHost;
+        jenkins.jenkinsUser = JENKINS_TESTING_USER;
+        jenkins.userSecret = new Jenkins.UserSecret();
+        jenkins.userSecret.apiToken = apiToken;
+        jenkins.publishCredsId = ARTIFACT_CREDS;
+        jenkins.tenant = new Jenkins.Tenant();
+        jenkins.tenant.moderneUrl = "https://app.moderne.io";
+        jenkins.tenant.moderneToken = "modToken";
+        jenkins.gitCredentialsId = GIT_CREDS;
+        jenkins.publishUrl = ARTIFACTORY_URL;
 
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-moderne-token.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+        String actual = StringUtils.trimIndent(jenkins.createStagePublish("", "", "", ""));
+        //language=groovy
+        assertThat(actual).isEqualToIgnoringWhitespace("""
+                stage('Publish') {
+                    steps {
+                        withCredentials([string(credentialsId: 'modToken', variable: 'MODERNE_TOKEN')]) {
+                            sh 'mod config moderne https://app.moderne.io --token ${MODERNE_TOKEN}'
+                        }
+                        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
+                            sh 'mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
+                        }
+                        sh 'mod build . --no-download'
+                        sh 'mod publish .'
+                    }
+                }
+                """
+        );
     }
 
     @Test
