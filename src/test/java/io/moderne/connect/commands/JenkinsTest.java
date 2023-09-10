@@ -264,6 +264,28 @@ class JenkinsTest {
     }
 
     @Test
+    void submitJobsWithModerneToken() throws Exception {
+        int result = cmd.execute("jenkins",
+                "--fromCsv", new File("src/test/csv/repos-without-java.csv").getAbsolutePath(),
+                "--controllerUrl", jenkinsHost,
+                "--jenkinsUser", JENKINS_TESTING_USER,
+                "--apiToken", apiToken,
+                "--publishCredsId", ARTIFACT_CREDS,
+                "--moderneUrl", "https://app.moderne.io",
+                "--moderneToken", "mat-BLAH",
+                "--gitCredsId", GIT_CREDS,
+                "--publishUrl", ARTIFACTORY_URL);
+        assertEquals(0, result);
+
+        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
+
+        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
+        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-moderne-token.xml").toPath()));
+        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
+
+    @Test
     void submitJobsWithCustomCLIURL() throws Exception {
         int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
