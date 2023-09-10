@@ -15,432 +15,145 @@
  */
 package io.moderne.connect.commands;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import org.junit.jupiter.api.BeforeEach;
+import org.intellij.lang.annotations.Language;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.images.builder.ImageFromDockerfile;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import picocli.CommandLine;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Testcontainers
-class JenkinsTest {
-    private final CommandLine cmd = new CommandLine(new Connect());
-    private static final String ARTIFACTORY_URL = "https://artifactory.moderne.ninja/artifactory/moderne-ingest";
-    private static final String ARTIFACT_CREDS = "artifactCreds";
-    private static final String GIT_CREDS = "myGitCreds";
-    private static final String JENKINS_TESTING_USER = "admin";
-    private static final String JENKINS_TESTING_PWD = "jenkins123";
-    private static final String AST_PUBLISH_USERNAME = "admin";
-    private static final String AST_PUBLISH_PASSWORD = "blah";
-    private static String jenkinsHost;
-    private String apiToken;
+public class JenkinsTest {
+    Jenkins jenkins = new Jenkins();
 
-    @SuppressWarnings("resource")
-    @Container
-    private final GenericContainer<?> jenkinsContainer = new GenericContainer<>(
-            new ImageFromDockerfile()
-                    .withDockerfile(new File("src/test/jenkins/Dockerfile").toPath())
-                    .withFileFromFile("casc.yaml", new File("src/test/jenkins/casc.yaml")))
-            .withExposedPorts(8080)
-            .withEnv("JENKINS_ADMIN_ID", JENKINS_TESTING_USER)
-            .withEnv("JENKINS_ADMIN_PASSWORD", JENKINS_TESTING_PWD)
-            .withEnv("JENKINS_AST_PUBLISH_USERNAME", AST_PUBLISH_USERNAME)
-            .withEnv("JENKINS_AST_PUBLISH_PASSWORD", AST_PUBLISH_PASSWORD)
-            .withEnv("JENKINS_GIT_USERNAME", "")
-            .withEnv("JENKINS_GIT_PASSWORD", "")
-            .waitingFor(Wait.forLogMessage(".*Jenkins is fully up and running.*\\n", 1));
+    @Nested
+    class DownloadStage {
+        @Test
+        void download() {
+            jenkins.downloadCLI = true;
+            jenkins.platform = "linux";
+            jenkins.cliVersion = "v0.3.2"; // TODO do we really want this hardcoded into the command option as a default value?
 
-    @BeforeEach
-    void setUp() {
-        jenkinsHost = "http://" + jenkinsContainer.getHost() + ":" + jenkinsContainer.getFirstMappedPort();
-        apiToken = createApiToken();
-    }
+            assertDownloadSteps("""
+                    sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.3.2/moderne-cli-linux-v0.3.2 > mod"
+                    sh "chmod 755 mod"
+                    """);
+        }
 
-    private static String createApiToken() {
-        // Create the API token, which appears not to be supported other than through the UI_main/api
-        HttpResponse<String> response = Unirest.post(jenkinsHost + "/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken")
-                .basicAuth(JENKINS_TESTING_USER, JENKINS_TESTING_PWD)
-                .header("Accept", "application/json")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header(Jenkins.JENKINS_CRUMB_HEADER, Jenkins.generateCrumb(jenkinsHost, JENKINS_TESTING_USER, JENKINS_TESTING_PWD))
-                .body("newTokenName=cli")
-                .asString();
-        assertTrue(response.isSuccess(), "Failed to create API token: " + response.getStatus() + " " + response.getStatusText());
-        try {
-            return new ObjectMapper()
-                    .readTree(response.getBody())
-                    .get("data")
-                    .get("tokenValue")
-                    .asText();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        @Test
+        void customUrl() {
+            jenkins.downloadCLIURL = "https://acme.com/moderne-cli";
+            assertDownloadSteps("""
+                    sh "curl --request GET https://acme.com/moderne-cli > mod"
+                    sh "chmod 755 mod"
+                    """);
+        }
+
+        @Test
+        void credentialsAndCustomUrl() {
+            jenkins.downloadCLIURL = "https://acme.com/moderne-cli";
+            jenkins.downloadCLICreds = "downloadCreds";
+            assertDownloadSteps("""
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'downloadCreds', usernameVariable: 'CLI_DOWNLOAD_CRED_USR', passwordVariable: 'CLI_DOWNLOAD_CRED_PWD']]) {
+                        sh "curl --user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} --request GET https://acme.com/moderne-cli > mod"
+                        sh "chmod 755 mod"
+                    }
+                    """);
+        }
+
+        void assertDownloadSteps(@Language("groovy") String steps) {
+            assertThat(jenkins.createStageDownload())
+                    .isEqualToIgnoringWhitespace("stage('Download CLI') { steps { %s } }".formatted(steps));
         }
     }
 
-    @Test
-    void submitJobs() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--verbose");
-        assertEquals(0, result);
+    @Nested
+    class PublishStage {
+        @Test
+        void withoutJava() {
+            assertPublishSteps("""
+                    sh 'mod build . --no-download'
+                    sh 'mod publish .'
+                    """);
+        }
 
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
+        @Test
+        void windows() {
+            jenkins.platform = "windows";
+            jenkins.publishUrl = "https://my.artifactory/moderne-ingest";
+            jenkins.publishCredsId = "artifactCreds";
+            assertPublishSteps("""
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
+                        powershell 'mod.exe config artifacts https://my.artifactory/moderne-ingest --user $env:ARTIFACTS_PUBLISH_CRED_USR --password $env:ARTIFACTS_PUBLISH_CRED_PWD'
+                    }
+                    powershell 'mod.exe build . --no-download'
+                    powershell 'mod.exe publish .'
+                    """);
+        }
 
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
+        @Test
+        void skipSsl() {
+            jenkins.publishUrl = "https://my.artifactory/moderne-ingest";
+            jenkins.publishCredsId = "artifactCreds";
+            jenkins.skipSSL = true;
+            assertPublishSteps("""
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
+                        sh 'mod config artifacts https://my.artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD} --skipSSL'
+                    }
+                    sh 'mod build . --no-download'
+                    sh 'mod publish .'
+                    """);
+        }
 
-    @Test
-    void submitJobsWithPassword() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--jenkinsPwd", JENKINS_TESTING_PWD,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
+        @Test
+        void modConfigModerne() {
+            jenkins.tenant = new Jenkins.Tenant();
+            jenkins.tenant.moderneUrl = "https://app.moderne.io";
+            jenkins.tenant.moderneToken = "modToken";
+            jenkins.publishUrl = "https://my.artifactory/moderne-ingest";
+            jenkins.publishCredsId = "artifactCreds";
+            assertPublishSteps("""
+                    withCredentials([string(credentialsId: 'modToken', variable: 'MODERNE_TOKEN')]) {
+                        sh 'mod config moderne https://app.moderne.io --token ${MODERNE_TOKEN}'
+                    }
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
+                        sh 'mod config artifacts https://my.artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
+                    }
+                    sh 'mod build . --no-download'
+                    sh 'mod publish .'
+                    """);
+        }
 
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
+        @Test
+        void submitJobWithMavenSettings() {
+            jenkins.mavenSettingsConfigFileId = "maven-ingest-settings-credentials";
+            assertPublishSteps("""
+                    configFileProvider([configFile(fileId: 'maven-ingest-settings-credentials', variable: 'MODERNE_MVN_SETTINGS_XML')]) {
+                        sh 'mod build . --no-download --maven-settings ${MODERNE_MVN_SETTINGS_XML}'
+                    }
+                    sh 'mod publish .'
+                    """);
+        }
 
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
+        @Test
+        void submitJobWithMavenPluginVersion() {
+            jenkins.moderneMavenPluginVersion = "5.0.2";
+            assertPublishSteps("""
+                    sh 'mod build . --no-download --maven-plugin-version 5.0.2'
+                    sh 'mod publish .'
+                    """);
+        }
 
-    @Test
-    void submitJobWithMavenSettings() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--mavenSettingsConfigFileId", "maven-ingest-settings-credentials");
-        assertEquals(0, result);
+        @Test
+        void submitJobWithGradlePluginVersion() {
+            jenkins.moderneGradlePluginVersion = "5.0.2";
+            assertPublishSteps("""
+                    sh 'mod build . --no-download --gradle-plugin-version 5.0.2'
+                    sh 'mod publish .'
+                    """);
+        }
 
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-maven-settings.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobWithGradlePluginVersion() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "5.0.2");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-gradle-plugin.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobWithMavenPluginVersion() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--mvnPluginVersion", "5.0.2");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-maven-plugin.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitTwoJobs() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-java-migration_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-java-migration_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/rewrite-java-migration-config.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobsThatDownloadCLI() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--downloadCLI");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-with-download.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobsWithoutJava() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos-without-java.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-without-java.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobsWithCustomCLIURL() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--downloadCLIUrl", "https://acme.com/moderne-cli");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob =
-                new String(Files.readAllBytes(new File("src/test/jenkins/config-with-custom-url.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobsWithSkipSSL() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--skipSSL=true");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob =
-                new String(Files.readAllBytes(new File("src/test/jenkins/config-with-skipSSL.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void downloadsCLIWithCreds() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--downloadCLIUrl", "https://acme.com/moderne-cli",
-                "--downloadCLICreds", "downloadCreds");
-        assertEquals(0, result);
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob =
-                new String(Files.readAllBytes(new File("src/test/jenkins/config-with-custom-url-creds.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobTwice() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-
-        // Submit the same job again, to very that it doesn't fail
-        result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobAndRemove() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-
-        // Now delete the job by marking it as skipped
-        result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/jenkins-skipped.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL,
-                "--deleteSkipped=true");
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertFalse(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
-    }
-
-    @Test
-    void submitJobAgentWithXMLentities() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--agent", "{ label 'os=windows && !reserved' }",
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-agent.xml").toPath()));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
-    }
-
-    @Test
-    void submitJobUsingWindowsPlatform() throws Exception {
-        int result = cmd.execute("jenkins",
-                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
-                "--controllerUrl", jenkinsHost,
-                "--platform", "windows",
-                "--jenkinsUser", JENKINS_TESTING_USER,
-                "--apiToken", apiToken,
-                "--publishCredsId", ARTIFACT_CREDS,
-                "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
-        assertEquals(0, result);
-
-        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
-                .asString().isSuccess()));
-
-        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-        String expectedJob = Files.readString(Paths.get("src/test/jenkins/config-windows.xml"));
-        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+        void assertPublishSteps(@Language("groovy") String steps) {
+            assertThat(jenkins.createStagePublish("", "", "", ""))
+                    .isEqualToIgnoringWhitespace("stage('Publish') { steps { %s } }".formatted(steps));
+        }
     }
 }
