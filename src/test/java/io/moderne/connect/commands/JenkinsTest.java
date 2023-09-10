@@ -40,7 +40,7 @@ public class JenkinsTest {
 
         @Test
         void customUrl() {
-            jenkins.downloadCLIURL = "https://acme.com/moderne-cli";
+            jenkins.downloadCLIUrl = "https://acme.com/moderne-cli";
             assertDownloadSteps("""
                     sh "curl --request GET https://acme.com/moderne-cli > mod"
                     sh "chmod 755 mod"
@@ -49,7 +49,7 @@ public class JenkinsTest {
 
         @Test
         void credentialsAndCustomUrl() {
-            jenkins.downloadCLIURL = "https://acme.com/moderne-cli";
+            jenkins.downloadCLIUrl = "https://acme.com/moderne-cli";
             jenkins.downloadCLICreds = "downloadCreds";
             assertDownloadSteps("""
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'downloadCreds', usernameVariable: 'CLI_DOWNLOAD_CRED_USR', passwordVariable: 'CLI_DOWNLOAD_CRED_PWD']]) {
@@ -135,7 +135,7 @@ public class JenkinsTest {
 
         @Test
         void submitJobWithMavenPluginVersion() {
-            jenkins.moderneMavenPluginVersion = "5.0.2";
+            jenkins.mvnPluginVersion = "5.0.2";
             assertPublishSteps("""
                     sh 'mod build . --no-download --maven-plugin-version 5.0.2'
                     sh 'mod publish .'
@@ -144,7 +144,7 @@ public class JenkinsTest {
 
         @Test
         void submitJobWithGradlePluginVersion() {
-            jenkins.moderneGradlePluginVersion = "5.0.2";
+            jenkins.gradlePluginVersion = "5.0.2";
             assertPublishSteps("""
                     sh 'mod build . --no-download --gradle-plugin-version 5.0.2'
                     sh 'mod publish .'
