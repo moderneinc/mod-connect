@@ -674,7 +674,7 @@ public class Jenkins implements Callable<Integer> {
         }
 
         boolean isWindowsPlatform = isWindowsPlatform();
-        String command = "\n"; // since this is an optional config, we add a newline to the previous command
+        String command = "";
         if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
@@ -684,7 +684,8 @@ public class Jenkins implements Callable<Integer> {
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}"
         );
         String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
-        return Templates.MODERNE_CREDENTIALS.format(tenant.moderneToken, shell);
+        // the \n is appended since this is an optional config and will be followed by another config
+        return Templates.MODERNE_CREDENTIALS.format(tenant.moderneToken, shell) + "\n";
     }
 
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
