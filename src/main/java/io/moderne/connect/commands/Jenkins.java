@@ -127,11 +127,11 @@ public class Jenkins implements Callable<Integer> {
                           "  ,openrewrite/rewrite-java-migration,main,,gradle,,,,,\n" +
                           "  additional rows...\n"
     )
-    Path csvFile;
+    Path fromCsv;
 
     @CommandLine.Option(names = "--gitCredsId", required = true,
             description = "The ID of the Jenkins credentials needed to clone the provided list of repositories.\n")
-    String gitCredentialsId;
+    String gitCredsId;
 
     @CommandLine.Option(names = "--jenkinsUser", required = true,
             description = "The Jenkins user that will be used to create the Jenkins Jobs.\n")
@@ -198,7 +198,7 @@ public class Jenkins implements Callable<Integer> {
 
     @CommandLine.Option(names = "--downloadCLIUrl",
             description = "Specifies an internal URL to download the CLI from if you'd prefer to host the CLI yourself.\n")
-    String downloadCLIURL;
+    String downloadCLIUrl;
 
     @CommandLine.Option(names = "--downloadCLICreds",
             description = "Specifies the Jenkins credentials Id to download the CLI if you host the CLI yourself.\n")
@@ -208,7 +208,7 @@ public class Jenkins implements Callable<Integer> {
             description = "The Jenkins folder that will store the created jobs. This folder will be created if it does not exist.\n\n" +
                           "@|bold Default|@: ${DEFAULT-VALUE}\n",
             defaultValue = "moderne-ingest")
-    String folderName;
+    String folder;
 
     @CommandLine.Option(names = "--mavenSettingsConfigFileId",
             description = "The ID of the Jenkins Maven settings config file that will be used to configure Maven builds. " +
@@ -255,7 +255,7 @@ public class Jenkins implements Callable<Integer> {
                           "@|bold latest.release|@ if it doesn't exist.\n\n" +
                           "@|bold Example|@: 0.37.0\n",
             defaultValue = "${MODERNE_GRADLE_PLUGIN_VERSION}")
-    String moderneGradlePluginVersion;
+    String gradlePluginVersion;
 
     @CommandLine.Option(names = "--mvnPluginVersion",
             description = "The version of the Moderne Maven plugin that should be used to build the artifacts.\n\n" +
@@ -263,7 +263,7 @@ public class Jenkins implements Callable<Integer> {
                           "@|bold RELEASE|@ if it doesn't exist.\n\n" +
                           "@|bold Example|@: v0.38.0\n",
             defaultValue = "${MODERNE_MVN_PLUGIN_VERSION}")
-    String moderneMavenPluginVersion;
+    String mvnPluginVersion;
 
     @CommandLine.Option(names = "--verbose", defaultValue = "false",
             description = "If enabled, additional debug statements will be printed throughout the Jenkins configuration.\n" +
@@ -343,8 +343,8 @@ public class Jenkins implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        if (!csvFile.toFile().exists()) {
-            System.err.println(csvFile.toString() + " does not exist");
+        if (!fromCsv.toFile().exists()) {
+            System.err.println(fromCsv.toString() + " does not exist");
             return 1;
         }
 
@@ -359,14 +359,14 @@ public class Jenkins implements Callable<Integer> {
             ExecutorService executorService = Executors.newFixedThreadPool(50);
             plugins = resolveJenkinsPlugins();
 
-            if (!StringUtils.isBlank(folderName)) {
-                if (!folderExists(folderName)) {
-                    createFolder(plugins, folderName);
+            if (!StringUtils.isBlank(folder)) {
+                if (!folderExists(folder)) {
+                    createFolder(plugins, folder);
                 }
             }
 
             List<Future<Boolean>> responses = new ArrayList<>();
-            BufferedReader br = new BufferedReader(new FileReader(csvFile.toFile()));
+            BufferedReader br = new BufferedReader(new FileReader(fromCsv.toFile()));
             String line;
             int lineNumber = 1;
             while ((line = br.readLine()) != null) {
@@ -412,11 +412,11 @@ public class Jenkins implements Callable<Integer> {
                     if (deleteSkipped) {
                         final int currentNumberFinal = lineNumber;
                         responses.add(executorService.submit(() -> {
-                            if (!jobExists(folderName, projectName)) {
+                            if (!jobExists(folder, projectName)) {
                                 System.out.printf("Skipping %s at line %d because it is marked as skipped: %s%n", repoSlug, currentNumberFinal, skipReason);
                                 return true;
                             }
-                            if (!deleteJob(folderName, projectName)) {
+                            if (!deleteJob(folder, projectName)) {
                                 System.out.printf("Failed to delete %s at line %d because it is marked as skipped: %s%n", repoSlug, currentNumberFinal, skipReason);
                                 return false;
                             }
@@ -436,13 +436,13 @@ public class Jenkins implements Callable<Integer> {
                 }
 
                 // Create the Jenkins job
-                String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredentialsId);
+                String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
                 String stageDownload = createStageDownload();
                 String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
                 String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
                 String flowDefinition = createFlowDefinition(plugins, pipeline);
 
-                responses.add(executorService.submit(() -> createJob(folderName, projectName, flowDefinition)));
+                responses.add(executorService.submit(() -> createJob(folder, projectName, flowDefinition)));
                 lineNumber++;
             }
             // Wait for all the jobs to be created before returning
@@ -600,11 +600,11 @@ public class Jenkins implements Callable<Integer> {
     }
 
     String createStageDownload() {
-        if (!downloadCLI && StringUtils.isBlank(downloadCLIURL)) {
+        if (!downloadCLI && StringUtils.isBlank(downloadCLIUrl)) {
             return "";
         }
 
-        String downloadURL = downloadCLIURL;
+        String downloadURL = downloadCLIUrl;
         if (StringUtils.isBlank(downloadURL)) {
             downloadURL = String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
         }
@@ -655,7 +655,7 @@ public class Jenkins implements Callable<Integer> {
 
         boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
         command += String.format("%s config artifacts %s --user %s --password %s",
@@ -679,7 +679,7 @@ public class Jenkins implements Callable<Integer> {
 
         boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
         command += String.format("%s config moderne %s --token %s",
@@ -695,7 +695,7 @@ public class Jenkins implements Callable<Integer> {
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             prefix += isWindowsPlatform ? ".\\\\" : "./";
         }
         String command = String.format("%s%s build . --no-download", prefix, isWindowsPlatform ? "mod.exe" : "mod");
@@ -708,11 +708,11 @@ public class Jenkins implements Callable<Integer> {
         if (!StringUtils.isBlank(mirrorUrl)) {
             command += " --mirror-url " + mirrorUrl;
         }
-        if (!StringUtils.isBlank(moderneGradlePluginVersion)) {
-            command += " --gradle-plugin-version " + moderneGradlePluginVersion;
+        if (!StringUtils.isBlank(gradlePluginVersion)) {
+            command += " --gradle-plugin-version " + gradlePluginVersion;
         }
-        if (!StringUtils.isBlank(moderneMavenPluginVersion)) {
-            command += " --maven-plugin-version " + moderneMavenPluginVersion;
+        if (!StringUtils.isBlank(mvnPluginVersion)) {
+            command += " --maven-plugin-version " + mvnPluginVersion;
         }
         if (!StringUtils.isBlank(commandSuffix)) {
             command += " " + commandSuffix;
@@ -730,7 +730,7 @@ public class Jenkins implements Callable<Integer> {
     private String createPublishCommand() {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
         String command = String.format("%s%s publish .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
