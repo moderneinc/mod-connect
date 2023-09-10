@@ -1,0 +1,3 @@
+                withCredentials([string(credentialsId: '%s', variable: 'MODERNE_TOKEN')]) {
+                    %s
+                }

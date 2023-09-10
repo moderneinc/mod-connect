@@ -170,7 +170,6 @@ public class Jenkins implements Callable<Integer> {
                     "@|bold Default|@: ${DEFAULT-VALUE}\n")
     private String defaultBranch;
 
-
     @CommandLine.Option(names = "--defaultGradle",
             description = "If no Gradle tool is specified for a repository in the CSV file, the Jenkins job will attempt " +
                     "to use this one for Gradle jobs. Specified in the Jenkins Global Tool Configuration page:\n" +
@@ -292,6 +291,19 @@ public class Jenkins implements Callable<Integer> {
         }
     }
 
+    @CommandLine.ArgGroup(exclusive = false)
+    private Tenant tenant;
+
+    static class Tenant {
+        @CommandLine.Option(names = "--moderneUrl", required = true,
+                description = "The URL of the Moderne tenant.")
+        private String moderneUrl;
+
+        @CommandLine.Option(names = "--moderneToken", required = true,
+                description = "A personal access token for the Moderne tenant.")
+        private String moderneToken;
+    }
+
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
 
     private static final String PLATFORM_WINDOWS = "windows";
@@ -314,6 +326,7 @@ public class Jenkins implements Callable<Integer> {
         PIPELINE("cli/jenkins/pipeline.groovy.template"),
 
         PUBLISH_CREDENTIALS("cli/jenkins/pipeline_credentials.groovy.template"),
+        MODERNE_CREDENTIALS("cli/jenkins/pipeline_moderne_creds.groovy.template"),
         MAVEN_SETTINGS("cli/jenkins/pipeline_maven_settings.groovy.template"),
 
         STAGE_CHECKOUT("cli/jenkins/pipeline_stage_checkout.groovy.template"),
@@ -619,6 +632,7 @@ public class Jenkins implements Callable<Integer> {
             toolsBlock = Templates.TOOLS.format(toolsConcatenated);
         }
         return Templates.STAGE_PUBLISH.format(toolsBlock,
+                createConfigTenantCommand(),
                 createConfigArtifactsCommand(),
                 createBuildCommand(repoStyle, repoBuildAction),
                 createPublishCommand());
@@ -652,6 +666,25 @@ public class Jenkins implements Callable<Integer> {
         // Always wrap in publish credentials block
         String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
         return Templates.PUBLISH_CREDENTIALS.format(publishCredsId, shell);
+    }
+
+    private String createConfigTenantCommand() {
+        if(tenant == null) {
+            return "";
+        }
+
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String command = "\n"; // since this is an optional config, we add a newline to the previous command
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {
+            command += isWindowsPlatform ? ".\\\\" : "./";
+        }
+        command += String.format("%s config tenant %s --token %s",
+                isWindowsPlatform ? "mod.exe" : "mod",
+                tenant.moderneUrl,
+                isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}"
+        );
+        String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
+        return Templates.MODERNE_CREDENTIALS.format(tenant.moderneToken, shell);
     }
 
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
