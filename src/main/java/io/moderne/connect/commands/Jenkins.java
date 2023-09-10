@@ -599,7 +599,7 @@ public class Jenkins implements Callable<Integer> {
         }
     }
 
-    private String createStageDownload() {
+    String createStageDownload() {
         if (!downloadCLI && StringUtils.isBlank(downloadCLIURL)) {
             return "";
         }
@@ -649,6 +649,10 @@ public class Jenkins implements Callable<Integer> {
     }
 
     private String createConfigArtifactsCommand() {
+        if (publishUrl == null) {
+            return ""; // for unit tests, will always be non-null in production
+        }
+
         boolean isWindowsPlatform = isWindowsPlatform();
         String command = "";
         if (downloadCLI || !StringUtils.isBlank(downloadCLIURL)) {

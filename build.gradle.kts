@@ -76,7 +76,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:latest.release")
     testImplementation("org.junit-pioneer:junit-pioneer:latest.release")
     testImplementation("org.assertj:assertj-core:latest.release")
-    testImplementation("org.openrewrite:rewrite-core:latest.release")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:latest.release")
     testImplementation("org.testcontainers:testcontainers:1.17.6")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
