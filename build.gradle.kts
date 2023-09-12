@@ -162,7 +162,7 @@ tasks.withType<JavaExec> {
     description = "Generate AsciiDoc manpage"
     classpath(configurations.compileClasspath, configurations.annotationProcessor, "src/main/java")
     mainClass.set("picocli.codegen.docgen.manpage.ManPageGenerator")
-    args("io.moderne.cli.commands.Connect", "--outdir=${buildDir}/asciidoc")
+    args("io.moderne.connect.commands.Connect", "--outdir=${buildDir}/asciidoc")
 }
 
 tasks.withType<AsciidoctorTask> {
