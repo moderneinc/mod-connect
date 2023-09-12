@@ -30,10 +30,10 @@ public class JenkinsTest {
         void download() {
             jenkins.downloadCLI = true;
             jenkins.platform = "linux";
-            jenkins.cliVersion = "v0.3.2"; // TODO do we really want this hardcoded into the command option as a default value?
+            jenkins.cliVersion = "v0.4.4"; // TODO do we really want this hardcoded into the command option as a default value?
 
             assertDownloadSteps("""
-                    sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.3.2/moderne-cli-linux-v0.3.2 > mod"
+                    sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.4.4/moderne-cli-linux-v0.4.4 > mod"
                     sh "chmod 755 mod"
                     """);
         }
