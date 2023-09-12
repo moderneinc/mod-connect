@@ -348,8 +348,8 @@ public class Jenkins implements Callable<Integer> {
             return 1;
         }
 
-        if (!cliVersion.startsWith("v0.3")) {
-            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v0.3");
+        if (!cliVersion.startsWith("v0.4") && !cliVersion.startsWith("v0.5") && !cliVersion.startsWith("v1")) {
+            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v0.4");
             return 1;
         }
 
