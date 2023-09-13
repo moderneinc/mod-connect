@@ -151,6 +151,24 @@ public class JenkinsTest {
                     """);
         }
 
+        @Test
+        void withGradleTool() {
+            assertThat(jenkins.createStagePublish("", "Gradle7", "", ""))
+                    //language=groovy
+                    .isEqualToIgnoringWhitespace("""
+                            stage('Publish') {
+                               tools {
+                                  gradle 'Gradle7'
+                               }
+                               steps {
+                                  sh 'mod build . --no-download'
+                                  sh 'mod publish .'
+                               }
+                            }
+                            """
+                    );
+        }
+
         void assertPublishSteps(@Language("groovy") String steps) {
             assertThat(jenkins.createStagePublish("", "", "", ""))
                     .isEqualToIgnoringWhitespace("stage('Publish') { steps { %s } }".formatted(steps));
