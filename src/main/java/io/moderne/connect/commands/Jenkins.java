@@ -329,8 +329,6 @@ public class Jenkins implements Callable<Integer> {
 
         FREESTYLE_JOB_DEFINITION("cli/jenkins/freestyle_job.xml.template"),
         FREESTYLE_SCM_DEFINITION("cli/jenkins/freestyle_scm.xml.template"),
-        FREESTYLE_DOWNLOAD_WITHOUT_CREDENTIALS("cli/jenkins/freestyle_download.sh.template"),
-        FREESTYLE_DOWNLOAD_WITH_CREDENTIALS("cli/jenkins/freestyle_download_creds.sh.template"),
         FREESTYLE_SHELL_DEFINITION("cli/jenkins/freestyle_shell.xml.template"),
         FREESTYLE_CREDENTIALS_DEFINITION("cli/jenkins/freestyle_credentials.xml.template"),
         FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
@@ -808,11 +806,11 @@ public class Jenkins implements Callable<Integer> {
             return "";
         }
         String downloadURL = getDownloadCLIUrl();
+        String credentials = "";
         if (StringUtils.isBlank(downloadCLICreds)) {
-            return Templates.FREESTYLE_DOWNLOAD_WITHOUT_CREDENTIALS.format(downloadURL);
-        } else {
-            return Templates.FREESTYLE_DOWNLOAD_WITH_CREDENTIALS.format(downloadURL);
+            credentials = "--user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} ";
         }
+        return String.format("curl %s--request GET %s --fail -o mod;\nchmod 755 mod;", credentials, downloadURL);
     }
 
     private String createFreestyleSteps(String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {

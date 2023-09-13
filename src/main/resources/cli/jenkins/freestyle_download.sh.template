@@ -1,2 +1,0 @@
-curl --request GET %s --fail -o mod;
-chmod 755 mod;

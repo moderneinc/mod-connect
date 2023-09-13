@@ -1,2 +1,0 @@
-curl --user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} --request GET %s --fail -o mod;
-chmod 755 mod;
