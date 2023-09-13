@@ -807,7 +807,7 @@ public class Jenkins implements Callable<Integer> {
         }
         String downloadURL = getDownloadCLIUrl();
         String credentials = "";
-        if (StringUtils.isBlank(downloadCLICreds)) {
+        if (!StringUtils.isBlank(downloadCLICreds)) {
             credentials = "--user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} ";
         }
         return String.format("curl %s--request GET %s --fail -o mod;\nchmod 755 mod;", credentials, downloadURL);
