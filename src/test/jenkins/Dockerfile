@@ -7,6 +7,7 @@ RUN jenkins-plugin-cli --plugins \
     cloudbees-folder:6.815.v0dd5a_cb_40e0e \
     configuration-as-code:1647.ve39ca_b_829b_42 \
     git:5.1.0 \
+    git-client:4.4.0 \
     gradle:2.8 \
     jdk-tool:66.vd8fa_64ee91b_d \
     pipeline-model-definition:2.2121.vd87fb_6536d1e \
