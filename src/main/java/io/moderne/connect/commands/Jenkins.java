@@ -624,7 +624,7 @@ public class Jenkins implements Callable<Integer> {
 
     private String getDownloadCLIUrl() {
         if (StringUtils.isBlank(downloadCLIUrl)) {
-            return String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/staging/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
+            return String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
         }
         return downloadCLIUrl;
     }
