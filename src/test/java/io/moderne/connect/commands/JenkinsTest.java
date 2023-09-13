@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class JenkinsTest {
+class JenkinsTest {
     Jenkins jenkins = new Jenkins();
 
     @Nested
@@ -33,7 +33,7 @@ public class JenkinsTest {
             jenkins.cliVersion = "v0.4.4"; // TODO do we really want this hardcoded into the command option as a default value?
 
             assertDownloadSteps("""
-                    sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.4.4/moderne-cli-linux-v0.4.4 > mod"
+                    sh "curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.4.4/moderne-cli-linux-v0.4.4 --fail -o mod"
                     sh "chmod 755 mod"
                     """);
         }
@@ -42,7 +42,7 @@ public class JenkinsTest {
         void customUrl() {
             jenkins.downloadCLIUrl = "https://acme.com/moderne-cli";
             assertDownloadSteps("""
-                    sh "curl --request GET https://acme.com/moderne-cli > mod"
+                    sh "curl --request GET https://acme.com/moderne-cli --fail -o mod"
                     sh "chmod 755 mod"
                     """);
         }
@@ -53,7 +53,7 @@ public class JenkinsTest {
             jenkins.downloadCLICreds = "downloadCreds";
             assertDownloadSteps("""
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'downloadCreds', usernameVariable: 'CLI_DOWNLOAD_CRED_USR', passwordVariable: 'CLI_DOWNLOAD_CRED_PWD']]) {
-                        sh "curl --user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} --request GET https://acme.com/moderne-cli > mod"
+                        sh "curl --user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} --request GET https://acme.com/moderne-cli --fail -o mod"
                         sh "chmod 755 mod"
                     }
                     """);
