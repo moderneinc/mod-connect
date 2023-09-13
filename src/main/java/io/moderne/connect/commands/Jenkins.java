@@ -155,7 +155,7 @@ public class Jenkins implements Callable<Integer> {
             defaultValue = "any")
     String agent;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.4.4",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.4.8",
             description = "The version of the Moderne CLI that should be used when running Jenkins Jobs.\n")
     String cliVersion;
 
@@ -270,6 +270,12 @@ public class Jenkins implements Callable<Integer> {
                           "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
     boolean verbose;
 
+    @CommandLine.Option(names = "--freestyleJobs",
+            defaultValue = "false",
+            description = "If this parameter is included, creating Freestyle Jobs instead of Pipelines.\n\n" +
+                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+    protected boolean freestyleJobs;
+
     @SuppressWarnings("unused")
     static class UserSecret {
         @CommandLine.Option(names = "--apiToken", description = "The Jenkins apiToken that will be used when " +
@@ -312,6 +318,7 @@ public class Jenkins implements Callable<Integer> {
     private static final String PIPELINE_MODEL_DEFINITION_PLUGIN = "pipeline-model-definition";
     private static final String WORKFLOW_CPS_PLUGIN = "workflow-cps";
     private static final String CLEAN_UP_PLUGIN = "ws-cleanup";
+    private static final String GIT_PLUGIN = "git";
 
     @RequiredArgsConstructor
     enum Templates {
@@ -319,6 +326,15 @@ public class Jenkins implements Callable<Integer> {
         DOWNLOAD_WITH_CREDENTIALS("cli/jenkins/pipeline_download_creds.groovy.template"),
         DOWNLOAD_WITHOUT_CREDENTIALS_WINDOWS("cli/jenkins/pipeline_download_windows.groovy.template"),
         DOWNLOAD_WITH_CREDENTIALS_WINDOWS("cli/jenkins/pipeline_download_creds_windows.groovy.template"),
+
+        FREESTYLE_JOB_DEFINITION("cli/jenkins/freestyle_job.xml.template"),
+        FREESTYLE_SCM_DEFINITION("cli/jenkins/freestyle_scm.xml.template"),
+        FREESTYLE_DOWNLOAD_WITHOUT_CREDENTIALS("cli/jenkins/freestyle_download.sh.template"),
+        FREESTYLE_DOWNLOAD_WITH_CREDENTIALS("cli/jenkins/freestyle_download_creds.sh.template"),
+        FREESTYLE_SHELL_DEFINITION("cli/jenkins/freestyle_shell.xml.template"),
+        FREESTYLE_CREDENTIALS_DEFINITION("cli/jenkins/freestyle_credentials.xml.template"),
+        FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
+
 
         FLOW_DEFINITION("cli/jenkins/flow_definition.xml.template"),
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
@@ -436,13 +452,20 @@ public class Jenkins implements Callable<Integer> {
                 }
 
                 // Create the Jenkins job
-                String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
-                String stageDownload = createStageDownload();
-                String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
-                String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
-                String flowDefinition = createFlowDefinition(plugins, pipeline);
-
-                responses.add(executorService.submit(() -> createJob(folder, projectName, flowDefinition)));
+                String job;
+                if (freestyleJobs) {
+                    String scm = createFreestyleScm(plugins, gitURL, branch);
+                    String steps = createFreestyleSteps(mavenTool, gradleTool, repoStyle, repoBuildAction);
+                    String credentials = createFreestyleCredentials(plugins);
+                    job = createFreestlyeJob(plugins, scm, steps, credentials);
+                } else {
+                    String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
+                    String stageDownload = createStageDownload();
+                    String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
+                    String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
+                    job = createFlowDefinition(plugins, pipeline);
+                }
+                responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
                 lineNumber++;
             }
             // Wait for all the jobs to be created before returning
@@ -488,7 +511,7 @@ public class Jenkins implements Callable<Integer> {
         JsonNode node = objectMapper.readTree(pluginsResponse.getBody());
         Map<String, String> result = new HashMap<>();
         Set<String> requiredPlugins = Arrays.stream(
-                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN,
+                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN, GIT_PLUGIN,
                                 PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_CPS_PLUGIN, CLEAN_UP_PLUGIN})
                 .collect(Collectors.toSet());
         JsonNode pluginsNode = node.get("plugins");
@@ -599,15 +622,19 @@ public class Jenkins implements Callable<Integer> {
         }
     }
 
+    private String getDownloadCLIUrl() {
+        if (StringUtils.isBlank(downloadCLIUrl)) {
+            return String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/staging/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
+        }
+        return downloadCLIUrl;
+    }
+
     String createStageDownload() {
         if (!downloadCLI && StringUtils.isBlank(downloadCLIUrl)) {
             return "";
         }
 
-        String downloadURL = downloadCLIUrl;
-        if (StringUtils.isBlank(downloadURL)) {
-            downloadURL = String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
-        }
+        String downloadURL = getDownloadCLIUrl();
         final String downloadCommand;
         if (StringUtils.isBlank(downloadCLICreds)) {
             downloadCommand = isWindowsPlatform() ?
@@ -667,6 +694,9 @@ public class Jenkins implements Callable<Integer> {
         if (skipSSL) {
             command += " --skipSSL";
         }
+        if (freestyleJobs) {
+            return command;
+        }
         // Always wrap in publish credentials block
         String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
         return Templates.PUBLISH_CREDENTIALS.format(publishCredsId, shell);
@@ -687,6 +717,9 @@ public class Jenkins implements Callable<Integer> {
                 tenant.moderneUrl,
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}"
         );
+        if (freestyleJobs) {
+            return command;
+        }
         String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
         // the \n is appended since this is an optional config and will be followed by another config
         return Templates.MODERNE_CREDENTIALS.format(tenant.moderneToken, shell) + "\n";
@@ -724,6 +757,9 @@ public class Jenkins implements Callable<Integer> {
             String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command + " --maven-settings " + settings);
             return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, shell);
         }
+        if (freestyleJobs) {
+            return command;
+        }
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
@@ -734,6 +770,9 @@ public class Jenkins implements Callable<Integer> {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
         String command = String.format("%s%s publish .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        if (freestyleJobs) {
+            return command;
+        }
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
@@ -754,6 +793,75 @@ public class Jenkins implements Callable<Integer> {
                 scheduledAt,
                 plugins.get(WORKFLOW_CPS_PLUGIN),
                 pipeline);
+    }
+
+    private String createFreestyleScm(Map<String, String> plugins, String scmHost, String branch) {
+        return Templates.FREESTYLE_SCM_DEFINITION.format(
+                plugins.get(GIT_PLUGIN),
+                scmHost,
+                gitCredsId,
+                branch);
+    }
+
+    private String createFreestyleDownload() {
+        if (!downloadCLI && StringUtils.isBlank(downloadCLIUrl)) {
+            return "";
+        }
+        String downloadURL = getDownloadCLIUrl();
+        if (StringUtils.isBlank(downloadCLICreds)) {
+            return Templates.FREESTYLE_DOWNLOAD_WITHOUT_CREDENTIALS.format(downloadURL);
+        } else {
+            return Templates.FREESTYLE_DOWNLOAD_WITH_CREDENTIALS.format(downloadURL);
+        }
+    }
+
+    private String createFreestyleSteps(String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
+        StringBuilder builder = new StringBuilder();
+
+        String download = createFreestyleDownload();
+        if (!StringUtils.isBlank(download)) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(download));
+            builder.append("\n");
+        }
+
+        String configTenant = createConfigTenantCommand();
+        if (!StringUtils.isBlank(configTenant)) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configTenant));
+            builder.append("\n");
+        }
+
+        builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
+        builder.append("\n");
+
+        // TODO maven/gradle tools
+        builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createBuildCommand(repoStyle, repoBuildAction)));
+        builder.append("\n");
+        builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createPublishCommand()));
+
+        return builder.toString();
+    }
+
+    private String createFreestyleCredentials(Map<String, String> plugins) {
+        StringBuilder bindings = new StringBuilder();
+        bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_DEFINITION.format(publishCredsId, "ARTIFACTS_PUBLISH_CRED_USR", "ARTIFACTS_PUBLISH_CRED_PWD"));
+        if (!StringUtils.isBlank(downloadCLICreds)) {
+            bindings.append("\n");
+            bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_DEFINITION.format(downloadCLICreds, "CLI_DOWNLOAD_CRED_USR", "CLI_DOWNLOAD_CRED_PWD"));
+        }
+        return Templates.FREESTYLE_CREDENTIALS_DEFINITION.format(
+                plugins.get("credentials-binding"),
+                bindings.toString()
+        );
+    }
+
+    private String createFreestlyeJob(Map<String, String> plugins, String scm, String steps, String credentials) {
+        return Templates.FREESTYLE_JOB_DEFINITION.format(
+                scm,
+                scheduledAt,
+                steps,
+                plugins.get("ws-cleanup"),
+                credentials
+        );
     }
 
     private boolean isWindowsPlatform() {

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -244,5 +245,34 @@ class JenkinsIntegTest {
         assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-agent.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
+
+    @Nested
+    class FreestyleJobs {
+        @Test
+        void submitJobs() throws Exception {
+            int result = cmd.execute("jenkins",
+                    "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
+                    "--controllerUrl", jenkinsHost,
+                    "--jenkinsUser", JENKINS_TESTING_USER,
+                    "--apiToken", apiToken,
+                    "--publishCredsId", ARTIFACT_CREDS,
+                    "--gitCredsId", GIT_CREDS,
+                    "--publishUrl", ARTIFACTORY_URL,
+                    "--folder", "freestyle",
+                    "--downloadCLI",
+                    "--freestyleJobs",
+                    "--verbose");
+            assertEquals(0, result);
+
+            await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/api/json")
+                    .asString().isSuccess()));
+
+            HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
+            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle.xml").toPath()));
+            assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+        }
+
     }
 }

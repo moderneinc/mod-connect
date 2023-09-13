@@ -1,0 +1,4 @@
+    <hudson.tasks.Shell>
+      <command>%s</command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
