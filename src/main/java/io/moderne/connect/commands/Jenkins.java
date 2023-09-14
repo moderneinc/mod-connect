@@ -337,7 +337,6 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_CREDENTIALS_DEFINITION("cli/jenkins/freestyle_credentials.xml.template"),
         FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
 
-
         FLOW_DEFINITION("cli/jenkins/flow_definition.xml.template"),
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
 
