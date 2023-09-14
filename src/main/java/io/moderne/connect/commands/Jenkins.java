@@ -319,6 +319,7 @@ public class Jenkins implements Callable<Integer> {
     private static final String WORKFLOW_CPS_PLUGIN = "workflow-cps";
     private static final String CLEAN_UP_PLUGIN = "ws-cleanup";
     private static final String GIT_PLUGIN = "git";
+    private static final String GRADLE_PLUGIN = "gradle";
 
     @RequiredArgsConstructor
     enum Templates {
@@ -330,6 +331,8 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_JOB_DEFINITION("cli/jenkins/freestyle_job.xml.template"),
         FREESTYLE_SCM_DEFINITION("cli/jenkins/freestyle_scm.xml.template"),
         FREESTYLE_SHELL_DEFINITION("cli/jenkins/freestyle_shell.xml.template"),
+        FREESTYLE_GRADLE_DEFINITION("cli/jenkins/freestyle_gradle.xml.template"),
+        FREESTYLE_MAVEN_DEFINITION("cli/jenkins/freestyle_maven.xml.template"),
         FREESTYLE_CREDENTIALS_DEFINITION("cli/jenkins/freestyle_credentials.xml.template"),
         FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
 
@@ -453,7 +456,7 @@ public class Jenkins implements Callable<Integer> {
                 String job;
                 if (freestyleJobs) {
                     String scm = createFreestyleScm(plugins, gitURL, branch);
-                    String steps = createFreestyleSteps(mavenTool, gradleTool, repoStyle, repoBuildAction);
+                    String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
                     String credentials = createFreestyleCredentials(plugins);
                     job = createFreestlyeJob(plugins, scm, steps, credentials);
                 } else {
@@ -509,7 +512,7 @@ public class Jenkins implements Callable<Integer> {
         JsonNode node = objectMapper.readTree(pluginsResponse.getBody());
         Map<String, String> result = new HashMap<>();
         Set<String> requiredPlugins = Arrays.stream(
-                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN, GIT_PLUGIN,
+                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN, GIT_PLUGIN, GRADLE_PLUGIN,
                                 PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_CPS_PLUGIN, CLEAN_UP_PLUGIN})
                 .collect(Collectors.toSet());
         JsonNode pluginsNode = node.get("plugins");
@@ -813,7 +816,7 @@ public class Jenkins implements Callable<Integer> {
         return String.format("curl %s--request GET %s --fail -o mod;\nchmod 755 mod;", credentials, downloadURL);
     }
 
-    private String createFreestyleSteps(String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
+    private String createFreestyleSteps(Map<String, String> plugins, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
         StringBuilder builder = new StringBuilder();
 
         String download = createFreestyleDownload();
@@ -831,8 +834,22 @@ public class Jenkins implements Callable<Integer> {
         builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
         builder.append("\n");
 
-        // TODO maven/gradle tools
-        builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createBuildCommand(repoStyle, repoBuildAction)));
+        if (!StringUtils.isBlank(gradleTool)) {
+            builder.append(Templates.FREESTYLE_GRADLE_DEFINITION.format(
+                    createBuildCommand(repoStyle, repoBuildAction),
+                    plugins.get("gradle"),
+                    gradleTool
+            ));
+        } else if (!StringUtils.isBlank(mavenTool)) {
+            builder.append(Templates.FREESTYLE_MAVEN_DEFINITION.format(
+                    mavenTool,
+                    createBuildCommand(repoStyle, repoBuildAction)
+            ));
+        } else {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(
+                    createBuildCommand(repoStyle, repoBuildAction)
+            ));
+        }
         builder.append("\n");
         builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createPublishCommand()));
 

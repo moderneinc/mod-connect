@@ -135,7 +135,7 @@ class JenkinsIntegTest {
     }
 
     @Test
-    void submitTwoJobs() throws Exception {
+    void submitMultipleJobs() throws Exception {
         int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
@@ -250,9 +250,9 @@ class JenkinsIntegTest {
     @Nested
     class FreestyleJobs {
         @Test
-        void submitJobs() throws Exception {
+        void submitFreestyleJobs() throws Exception {
             int result = cmd.execute("jenkins",
-                    "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
+                    "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
                     "--controllerUrl", jenkinsHost,
                     "--jenkinsUser", JENKINS_TESTING_USER,
                     "--apiToken", apiToken,
@@ -270,7 +270,7 @@ class JenkinsIntegTest {
 
             HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
             assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
-            String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle.xml").toPath()));
+            String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle.xml").toPath()));
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
         }
 

@@ -53,10 +53,31 @@
         </hudson.tasks.Shell>
 
         <hudson.tasks.Shell>
-            <command>./mod build . --no-download</command>
+            <command><![CDATA[
+echo "
+  task modBuild(type:Exec) {
+    workingDir '.'
+    commandLine './mod build . --no-download'
+  }
+" > ingest.gradle;
+echo "ingest.gradle" >> .git/info/exclude;
+      ]]></command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
-
+        <hudson.plugins.gradle.Gradle plugin="gradle@2.8">
+            <switches/>
+            <tasks>modBuild</tasks>
+            <rootBuildScriptDir/>
+            <buildFile>ingest.gradle</buildFile>
+            <gradleName>gradle</gradleName>
+            <useWrapper>false</useWrapper>
+            <makeExecutable>false</makeExecutable>
+            <useWorkspaceAsHome>false</useWorkspaceAsHome>
+            <wrapperLocation/>
+            <passAllAsSystemProperties>false</passAllAsSystemProperties>
+            <projectProperties/>
+            <passAllAsProjectProperties>false</passAllAsProjectProperties>
+        </hudson.plugins.gradle.Gradle>
         <hudson.tasks.Shell>
             <command>./mod publish .</command>
             <configuredLocalRules/>

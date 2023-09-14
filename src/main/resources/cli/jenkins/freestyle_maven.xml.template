@@ -1,0 +1,8 @@
+    <hudson.tasks.Maven>
+      <mavenName>%s</mavenName>
+      <targets>exec:exec -Dexec.executable="%s"</targets>
+      <usePrivateRepository>false</usePrivateRepository>
+      <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+      <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+      <injectBuildVariables>false</injectBuildVariables>
+    </hudson.tasks.Maven>
