@@ -320,6 +320,7 @@ public class Jenkins implements Callable<Integer> {
     private static final String CLEAN_UP_PLUGIN = "ws-cleanup";
     private static final String GIT_PLUGIN = "git";
     private static final String GRADLE_PLUGIN = "gradle";
+    private static final String CREDENTIALS_PLUGIN = "credentials-binding";
 
     @RequiredArgsConstructor
     enum Templates {
@@ -512,7 +513,8 @@ public class Jenkins implements Callable<Integer> {
         JsonNode node = objectMapper.readTree(pluginsResponse.getBody());
         Map<String, String> result = new HashMap<>();
         Set<String> requiredPlugins = Arrays.stream(
-                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN, GIT_PLUGIN, GRADLE_PLUGIN,
+                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN,
+                                GIT_PLUGIN, GRADLE_PLUGIN, CREDENTIALS_PLUGIN,
                                 PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_CPS_PLUGIN, CLEAN_UP_PLUGIN})
                 .collect(Collectors.toSet());
         JsonNode pluginsNode = node.get("plugins");
@@ -837,7 +839,7 @@ public class Jenkins implements Callable<Integer> {
         if (!StringUtils.isBlank(gradleTool)) {
             builder.append(Templates.FREESTYLE_GRADLE_DEFINITION.format(
                     createBuildCommand(repoStyle, repoBuildAction),
-                    plugins.get("gradle"),
+                    plugins.get(GRADLE_PLUGIN),
                     gradleTool
             ));
         } else if (!StringUtils.isBlank(mavenTool)) {
@@ -864,7 +866,7 @@ public class Jenkins implements Callable<Integer> {
             bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_DEFINITION.format(downloadCLICreds, "CLI_DOWNLOAD_CRED_USR", "CLI_DOWNLOAD_CRED_PWD"));
         }
         return Templates.FREESTYLE_CREDENTIALS_DEFINITION.format(
-                plugins.get("credentials-binding"),
+                plugins.get(CREDENTIALS_PLUGIN),
                 bindings.toString()
         );
     }
@@ -874,7 +876,7 @@ public class Jenkins implements Callable<Integer> {
                 scm,
                 scheduledAt,
                 steps,
-                plugins.get("ws-cleanup"),
+                plugins.get(CLEAN_UP_PLUGIN),
                 credentials
         );
     }
