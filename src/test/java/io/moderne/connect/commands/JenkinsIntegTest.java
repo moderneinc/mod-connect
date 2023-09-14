@@ -261,7 +261,7 @@ class JenkinsIntegTest {
                     "--publishUrl", ARTIFACTORY_URL,
                     "--folder", "freestyle",
                     "--downloadCLI",
-                    "--freestyleJobs",
+                    "--jobType", "FREESTYLE",
                     "--verbose");
             assertEquals(0, result);
 

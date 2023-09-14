@@ -270,11 +270,11 @@ public class Jenkins implements Callable<Integer> {
                           "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
     boolean verbose;
 
-    @CommandLine.Option(names = "--freestyleJobs",
-            defaultValue = "false",
-            description = "If this parameter is included, creating Freestyle Jobs instead of Pipelines.\n\n" +
+    @CommandLine.Option(names = "--jobType",
+            defaultValue = "PIPELINE",
+            description = "The type of Jenkins jobs that should be created.\n\n" +
                           "@|bold Default|@: ${DEFAULT-VALUE}\n")
-    protected boolean freestyleJobs;
+    JobType jobType;
 
     @SuppressWarnings("unused")
     static class UserSecret {
@@ -308,6 +308,11 @@ public class Jenkins implements Callable<Integer> {
         @CommandLine.Option(names = "--moderneToken", required = true,
                 description = "A personal access token for the Moderne tenant.")
         String moderneToken;
+    }
+
+    enum JobType {
+        PIPELINE,
+        FREESTYLE
     }
 
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
@@ -454,17 +459,22 @@ public class Jenkins implements Callable<Integer> {
 
                 // Create the Jenkins job
                 String job;
-                if (freestyleJobs) {
-                    String scm = createFreestyleScm(plugins, gitURL, branch);
-                    String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
-                    String credentials = createFreestyleCredentials(plugins);
-                    job = createFreestlyeJob(plugins, scm, steps, credentials);
-                } else {
-                    String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
-                    String stageDownload = createStageDownload();
-                    String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
-                    String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
-                    job = createFlowDefinition(plugins, pipeline);
+                switch (jobType) {
+                    case FREESTYLE:
+                        String scm = createFreestyleScm(plugins, gitURL, branch);
+                        String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
+                        String credentials = createFreestyleCredentials(plugins);
+                        job = createFreestlyeJob(plugins, scm, steps, credentials);
+                        break;
+                    case PIPELINE:
+                        String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
+                        String stageDownload = createStageDownload();
+                        String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
+                        String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
+                        job = createFlowDefinition(plugins, pipeline);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown jobType: "+jobType.name());
                 }
                 responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
                 lineNumber++;
@@ -696,7 +706,7 @@ public class Jenkins implements Callable<Integer> {
         if (skipSSL) {
             command += " --skipSSL";
         }
-        if (freestyleJobs) {
+        if (jobType == JobType.FREESTYLE) {
             return command;
         }
         // Always wrap in publish credentials block
@@ -719,7 +729,7 @@ public class Jenkins implements Callable<Integer> {
                 tenant.moderneUrl,
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}"
         );
-        if (freestyleJobs) {
+        if (jobType == JobType.FREESTYLE) {
             return command;
         }
         String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
@@ -759,7 +769,7 @@ public class Jenkins implements Callable<Integer> {
             String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command + " --maven-settings " + settings);
             return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, shell);
         }
-        if (freestyleJobs) {
+        if (jobType == JobType.FREESTYLE) {
             return command;
         }
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
@@ -772,7 +782,7 @@ public class Jenkins implements Callable<Integer> {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
         String command = String.format("%s%s publish .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
-        if (freestyleJobs) {
+        if (jobType == JobType.FREESTYLE) {
             return command;
         }
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
