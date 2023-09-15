@@ -155,7 +155,7 @@ public class Jenkins implements Callable<Integer> {
             defaultValue = "any")
     String agent;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.4.8",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.4.14",
             description = "The version of the Moderne CLI that should be used when running Jenkins Jobs.\n")
     String cliVersion;
 
@@ -845,20 +845,33 @@ public class Jenkins implements Callable<Integer> {
         builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
         builder.append("\n");
 
+        String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
+
         if (!StringUtils.isBlank(gradleTool)) {
+            String buildCommandArray = Arrays.stream(buildCommand.split(" +"))
+                    .collect(Collectors.joining("', '", "'", "'"));
+
             builder.append(Templates.FREESTYLE_GRADLE_DEFINITION.format(
-                    createBuildCommand(repoStyle, repoBuildAction),
+                    buildCommandArray,
                     plugins.get(GRADLE_PLUGIN),
                     gradleTool
             ));
         } else if (!StringUtils.isBlank(mavenTool)) {
+            String[] parts = buildCommand.split(" +");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Build command is not valid: " + buildCommand);
+            }
+            String executable = parts[0];
+            String args = Arrays.stream(Arrays.copyOfRange(parts, 1, parts.length))
+                    .collect(Collectors.joining("</argument><argument>", "<argument>", "</argument>"));
             builder.append(Templates.FREESTYLE_MAVEN_DEFINITION.format(
-                    mavenTool,
-                    createBuildCommand(repoStyle, repoBuildAction)
+                    executable,
+                    args,
+                    mavenTool
             ));
         } else {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(
-                    createBuildCommand(repoStyle, repoBuildAction)
+                    buildCommand
             ));
         }
         builder.append("\n");

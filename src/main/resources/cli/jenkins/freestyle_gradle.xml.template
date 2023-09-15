@@ -3,7 +3,7 @@
 echo "
   task modBuild(type:Exec) {
     workingDir '.'
-    commandLine '%s'
+    commandLine %s
   }
 " > ingest.gradle;
 echo "ingest.gradle" >> .git/info/exclude;
