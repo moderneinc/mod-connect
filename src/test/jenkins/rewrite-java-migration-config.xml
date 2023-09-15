@@ -59,7 +59,7 @@
             }
             post {
                 always {
-                    archiveArtifacts artifacts: '.moderne/build/**/build.log'
+                    archiveArtifacts artifacts: '**/build.log'
                     cleanWs()
                 }
             }
