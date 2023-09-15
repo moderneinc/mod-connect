@@ -482,7 +482,7 @@ public class Jenkins implements Callable<Integer> {
                         job = createFlowDefinition(plugins, pipeline);
                         break;
                     default:
-                        throw new IllegalArgumentException("Unknown jobType: "+jobType.name());
+                        throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
                 }
                 responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
                 lineNumber++;
@@ -533,9 +533,9 @@ public class Jenkins implements Callable<Integer> {
                 // Not requiring optional plugins
                 .filter(p -> !StringUtils.isBlank(mavenSettingsConfigFileId) || !p.equals(CONFIG_FILE_PLUGIN))
                 .filter(p -> jobType == JobType.FREESTYLE || !p.equals(GRADLE_PLUGIN))
-                .filter(p -> jobType == JobType.PIPELINE || !(p.equals(PIPELINE_MODEL_DEFINITION_PLUGIN)
-                                                           || p.equals(WORKFLOW_CPS_PLUGIN)
-                                                           || p.equals(WORKFLOW_JOB_PLUGIN)))
+                .filter(p -> jobType == JobType.PIPELINE || !(p.equals(PIPELINE_MODEL_DEFINITION_PLUGIN) ||
+                                                              p.equals(WORKFLOW_CPS_PLUGIN) ||
+                                                              p.equals(WORKFLOW_JOB_PLUGIN)))
                 .collect(Collectors.toSet());
         JsonNode pluginsNode = node.get("plugins");
         int pluginsSize = pluginsNode.size();
@@ -791,7 +791,7 @@ public class Jenkins implements Callable<Integer> {
                 }
                 return shell;
             default:
-                throw new IllegalArgumentException("Unknown jobType: "+jobType.name());
+                throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
         }
     }
 
