@@ -181,7 +181,6 @@ class JenkinsTest {
         }
 
         void assertPublishSteps(@Language("groovy") String steps) {
-            jenkins.jobType = Jenkins.JobType.PIPELINE;
             assertThat(jenkins.createStagePublish("", "", "", ""))
                     .isEqualToIgnoringWhitespace("stage('Publish') { steps { %s } }".formatted(steps));
         }
