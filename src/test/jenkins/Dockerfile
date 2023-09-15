@@ -9,6 +9,8 @@ RUN jenkins-plugin-cli --plugins \
     git:5.1.0 \
     git-client:4.4.0 \
     gradle:2.8 \
+    credentials-binding:631.v861c06d062b_4 \
+    config-file-provider:953.v0432a_802e4d2 \
     jdk-tool:66.vd8fa_64ee91b_d \
     pipeline-model-definition:2.2121.vd87fb_6536d1e \
     workflow-cps:3691.v28b_14c465a_b_b_ \

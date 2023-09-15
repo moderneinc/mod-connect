@@ -46,18 +46,16 @@
                 chmod 755 mod;</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
-
         <hudson.tasks.Shell>
             <command>./mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
-
         <hudson.tasks.Shell>
             <command><![CDATA[
 echo "
   task modBuild(type:Exec) {
     workingDir '.'
-    commandLine './mod', 'build', '.', '--no-download'
+    commandLine './mod', 'build', '.', '--no-download', '--maven-settings', '${MODERNE_MVN_SETTINGS_XML}'
   }
 " > ingest.gradle;
 echo "ingest.gradle" >> .git/info/exclude;
@@ -119,5 +117,14 @@ echo "ingest.gradle" >> .git/info/exclude;
                 </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
             </bindings>
         </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+        <org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper plugin="config-file-provider@953.v0432a_802e4d2">
+            <managedFiles>
+                <org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
+                    <fileId>maven_settings</fileId>
+                    <replaceTokens>false</replaceTokens>
+                    <variable>MODERNE_MVN_SETTINGS_XML</variable>
+                </org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
+            </managedFiles>
+        </org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper>
     </buildWrappers>
 </project>
