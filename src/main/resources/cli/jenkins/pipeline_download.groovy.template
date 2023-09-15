@@ -1,2 +1,2 @@
-                sh "curl --request GET %s > mod"
+                sh "curl --request GET %s --fail -o mod"
                 sh "chmod 755 mod"

@@ -1,0 +1,26 @@
+    <hudson.tasks.Shell>
+      <command><![CDATA[
+echo "
+  task modBuild(type:Exec) {
+    workingDir '.'
+    commandLine %s
+  }
+" > ingest.gradle;
+echo "ingest.gradle" >> .git/info/exclude;
+      ]]></command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+    <hudson.plugins.gradle.Gradle plugin="gradle@%s">
+      <switches></switches>
+      <tasks>modBuild</tasks>
+      <rootBuildScriptDir></rootBuildScriptDir>
+      <buildFile>ingest.gradle</buildFile>
+      <gradleName>%s</gradleName>
+      <useWrapper>false</useWrapper>
+      <makeExecutable>false</makeExecutable>
+      <useWorkspaceAsHome>false</useWorkspaceAsHome>
+      <wrapperLocation></wrapperLocation>
+      <passAllAsSystemProperties>false</passAllAsSystemProperties>
+      <projectProperties></projectProperties>
+      <passAllAsProjectProperties>false</passAllAsProjectProperties>
+    </hudson.plugins.gradle.Gradle>
