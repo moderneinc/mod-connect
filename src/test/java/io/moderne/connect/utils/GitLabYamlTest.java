@@ -60,6 +60,7 @@ class GitLabYamlTest {
 
         String yaml = write(pipeline);
 
+        //language=yaml
         String expected = """
                 stages:
                 - download
