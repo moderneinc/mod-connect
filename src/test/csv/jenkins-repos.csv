@@ -1,2 +1,3 @@
 ,openrewrite/rewrite-spring,main,,gradle,,,,false,
 ,openrewrite/rewrite-java-migration,main,,gradle,,,,false,
+,openrewrite/rewrite-maven-plugin,main,maven,,,,,false,

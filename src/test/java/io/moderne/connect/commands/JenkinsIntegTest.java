@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -41,6 +42,7 @@ class JenkinsIntegTest {
     private static final String ARTIFACTORY_URL = "https://artifactory.moderne.ninja/artifactory/moderne-ingest";
     private static final String ARTIFACT_CREDS = "artifactCreds";
     private static final String GIT_CREDS = "myGitCreds";
+    private static final String MAVEN_SETTINGS = "maven_settings";
     private static final String JENKINS_TESTING_USER = "admin";
     private static final String JENKINS_TESTING_PWD = "jenkins123";
     private static final String AST_PUBLISH_USERNAME = "admin";
@@ -134,7 +136,7 @@ class JenkinsIntegTest {
     }
 
     @Test
-    void submitTwoJobs() throws Exception {
+    void submitMultipleJobs() throws Exception {
         int result = cmd.execute("jenkins",
                 "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
                 "--controllerUrl", jenkinsHost,
@@ -244,5 +246,35 @@ class JenkinsIntegTest {
         assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-agent.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
+
+    @Nested
+    class FreestyleJobs {
+        @Test
+        void submitFreestyleJobs() throws Exception {
+            int result = cmd.execute("jenkins",
+                    "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
+                    "--controllerUrl", jenkinsHost,
+                    "--jenkinsUser", JENKINS_TESTING_USER,
+                    "--apiToken", apiToken,
+                    "--publishCredsId", ARTIFACT_CREDS,
+                    "--gitCredsId", GIT_CREDS,
+                    "--publishUrl", ARTIFACTORY_URL,
+                    "--folder", "freestyle",
+                    "--downloadCLI",
+                    "--mavenSettingsConfigFileId", MAVEN_SETTINGS,
+                    "--jobType", "FREESTYLE",
+                    "--verbose");
+            assertEquals(0, result);
+
+            await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/api/json")
+                    .asString().isSuccess()));
+
+            HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
+            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle.xml").toPath()));
+            assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+        }
+
     }
 }

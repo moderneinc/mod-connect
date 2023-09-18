@@ -1,0 +1,36 @@
+    <hudson.tasks.Shell>
+      <command><![CDATA[
+echo "
+  <project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.moderne</groupId>
+    <artifactId>ingest</artifactId>
+    <version>1.0</version>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.1.0</version>
+          <configuration>
+            <executable>%s</executable>
+            <arguments>%s</arguments>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+  </project>
+" > ingest.xml;
+echo "ingest.xml" >> .git/info/exclude;
+      ]]></command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+    <hudson.tasks.Maven>
+      <mavenName>%s</mavenName>
+      <targets>exec:exec</targets>
+      <pom>ingest.xml</pom>
+      <usePrivateRepository>false</usePrivateRepository>
+      <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+      <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+      <injectBuildVariables>false</injectBuildVariables>
+    </hudson.tasks.Maven>

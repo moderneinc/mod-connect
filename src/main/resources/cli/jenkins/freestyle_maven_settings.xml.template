@@ -1,0 +1,9 @@
+    <org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper plugin="config-file-provider@%s">
+      <managedFiles>
+        <org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
+          <fileId>%s</fileId>
+          <replaceTokens>false</replaceTokens>
+          <variable>MODERNE_MVN_SETTINGS_XML</variable>
+        </org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
+      </managedFiles>
+    </org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper>
