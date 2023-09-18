@@ -417,10 +417,10 @@ public class GitLab implements Callable<Integer> {
         if (publishUrl == null) {
             return ""; // for unit tests, will always be non-null in production
         }
-        String args = String.format("config artifacts %s --user %s --password %s",
-                publishUrl,
+        String args = String.format("config artifacts --user=%s --password=%s  %s",
                 variable(publishUserSecretName),
-                variable(publishPwdSecretName)
+                variable(publishPwdSecretName),
+                publishUrl
         );
         if (skipSSL) {
             args += " --skipSSL";
@@ -440,7 +440,7 @@ public class GitLab implements Callable<Integer> {
         if (token == null) {
             token = isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}";
         }
-        String args = String.format("config moderne %s --token %s", tenant.moderneUrl, token);
+        String args = String.format("config moderne --token=%s %s", token, tenant.moderneUrl);
         return modCommand(args);
     }
 

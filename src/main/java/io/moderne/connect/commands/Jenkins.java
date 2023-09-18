@@ -715,11 +715,11 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
-        command += String.format("%s config artifacts %s --user %s --password %s",
+        command += String.format("%s config artifacts --user=%s --password=%s %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
-                publishUrl,
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
-                isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_PWD" : "${ARTIFACTS_PUBLISH_CRED_PWD}"
+                isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_PWD" : "${ARTIFACTS_PUBLISH_CRED_PWD}",
+                publishUrl
         );
         if (skipSSL) {
             command += " --skipSSL";
@@ -742,10 +742,10 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
-        command += String.format("%s config moderne %s --token %s",
+        command += String.format("%s config moderne --token=%s %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
-                tenant.moderneUrl,
-                isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}"
+                isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}",
+                tenant.moderneUrl
         );
         if (jobType == JobType.FREESTYLE) {
             return command;
