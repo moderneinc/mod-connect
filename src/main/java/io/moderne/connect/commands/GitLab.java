@@ -214,7 +214,7 @@ public class GitLab implements Callable<Integer> {
     boolean skipSSL;
 
     @CommandLine.Option(names = "--platform",
-            description = "The OS platform for the Jenkins node/agent. The possible options are: windows, linux, or macos.\n\n" +
+            description = "The OS platform for the Gitlab runner. The possible options are: windows, linux, or macos.\n\n" +
                           "@|bold Default|@: ${DEFAULT-VALUE}\n",
             defaultValue = "linux")
     String platform;
@@ -222,7 +222,7 @@ public class GitLab implements Callable<Integer> {
     @CommandLine.Option(
             names = "--verbose",
             defaultValue = "false",
-            description = "If enabled, additional debug statements will be printed throughout the Jenkins configuration.\n" +
+            description = "If enabled, additional debug statements will be printed.\n" +
                           "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
     boolean verbose;
 
@@ -354,14 +354,12 @@ public class GitLab implements Callable<Integer> {
         if (StringUtils.isBlank(downloadURL)) {
             downloadURL = String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
         }
-        String baseCommand = String.format("curl --fail --request GET --url '%s'", downloadURL);
-        String downloadCommand;
+        String baseCommand = String.format("curl --fail --location --output mod --request GET --url '%s'", downloadURL);
+        String downloadCommand = baseCommand;
         if (StringUtils.isNotBlank(downloadCLITokenSecretName)) {
-            downloadCommand = String.format("%s --header 'Authorization: Bearer %s' > mod", baseCommand, variable(downloadCLITokenSecretName));
+            downloadCommand = String.format("%s --header 'Authorization: Bearer %s'", baseCommand, variable(downloadCLITokenSecretName));
         } else if (StringUtils.isNotBlank(downloadCLIUserNameSecretName)) {
-            downloadCommand = String.format("%s --user %s:%s > mod", baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
-        } else {
-            downloadCommand = String.format("%s > mod", baseCommand);
+            downloadCommand = String.format("%s --user %s:%s", baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
         }
 
         String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && mod help && exit 0";
