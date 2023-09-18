@@ -78,8 +78,8 @@ public class GitlabTest {
             gitlab.platform = "macos";
             gitlab.cliVersion = "v0.5.0";
 
-            assertDownloadSteps(
-                    "curl --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v0.5.0/moderne-cli-macos-v0.5.0' > mod",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0'",
+                    "curl --fail --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v0.5.0/moderne-cli-macos-v0.5.0' > mod",
                     "chmod 755 mod"
             );
         }
@@ -87,8 +87,8 @@ public class GitlabTest {
         @Test
         void customUrl() {
             gitlab.downloadCLIUrl = "https://acme.com/moderne-cli";
-            assertDownloadSteps(
-                    "curl --request GET --url 'https://acme.com/moderne-cli' > mod",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0'",
+                    "curl --fail --request GET --url 'https://acme.com/moderne-cli' > mod",
                     "chmod 755 mod"
             );
         }
@@ -97,7 +97,8 @@ public class GitlabTest {
         void tokenAndCustomUrl() {
             gitlab.downloadCLIUrl = "https://acme.com/moderne-cli";
             gitlab.downloadCLITokenSecretName = "CLI_DOWNLOAD_TOKEN";
-            assertDownloadSteps("curl --request GET --url 'https://acme.com/moderne-cli' --header 'Authorization: Bearer $CLI_DOWNLOAD_TOKEN' > mod",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0'",
+                    "curl --fail --request GET --url 'https://acme.com/moderne-cli' --header 'Authorization: Bearer $CLI_DOWNLOAD_TOKEN' > mod",
                     "chmod 755 mod"
             );
         }
@@ -107,7 +108,8 @@ public class GitlabTest {
             gitlab.downloadCLIUrl = "https://acme.com/moderne-cli";
             gitlab.downloadCLIUserNameSecretName = "CLI_DOWNLOAD_CRED_USR";
             gitlab.downloadCLIPasswordSecretName = "CLI_DOWNLOAD_CRED_PWD";
-            assertDownloadSteps("curl --user $CLI_DOWNLOAD_CRED_USR:$CLI_DOWNLOAD_CRED_PWD --request GET --url 'https://acme.com/moderne-cli' > mod",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0'",
+                    "curl --fail --request GET --url 'https://acme.com/moderne-cli' --user $CLI_DOWNLOAD_CRED_USR:$CLI_DOWNLOAD_CRED_PWD > mod",
                     "chmod 755 mod"
             );
         }

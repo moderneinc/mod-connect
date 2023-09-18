@@ -268,7 +268,6 @@ public class GitLab implements Callable<Integer> {
             if (pipeline == null) return 1;
 
 
-
             File pipelineFile = new File("moderne-pipeline.yml");
             if (!pipelineFile.exists() && !pipelineFile.createNewFile()) {
                 throw new RuntimeException("Unable to create pipeline file");
@@ -355,21 +354,24 @@ public class GitLab implements Callable<Integer> {
         if (StringUtils.isBlank(downloadURL)) {
             downloadURL = String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
         }
+        String baseCommand = String.format("curl --fail --request GET --url '%s'", downloadURL);
         String downloadCommand;
         if (StringUtils.isNotBlank(downloadCLITokenSecretName)) {
-            downloadCommand = String.format("curl --request GET --url '%s' --header 'Authorization: Bearer %s' > mod", downloadURL, variable(downloadCLITokenSecretName));
+            downloadCommand = String.format("%s --header 'Authorization: Bearer %s' > mod", baseCommand, variable(downloadCLITokenSecretName));
         } else if (StringUtils.isNotBlank(downloadCLIUserNameSecretName)) {
-            downloadCommand = String.format("curl --user %s:%s --request GET --url '%s' > mod", variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName), downloadURL);
+            downloadCommand = String.format("%s --user %s:%s > mod", baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
         } else {
-            downloadCommand = String.format("curl --request GET --url '%s' > mod", downloadURL);
+            downloadCommand = String.format("%s > mod", baseCommand);
         }
 
+        String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0'";
         return GitLabYaml.Job.builder()
                 .stage(GitLabYaml.Stage.DOWNLOAD)
                 .cache(GitLabYaml.Cache.builder()
                         .key(String.format("cli-%s-%s", platform, cliVersion))
                         .path("mod")
                         .policy(GitLabYaml.Cache.Policy.PUSH_AND_PULL).build())
+                .command(ifFileExistsExit)
                 .command(downloadCommand)
                 .command("chmod 755 mod")
                 .build();
