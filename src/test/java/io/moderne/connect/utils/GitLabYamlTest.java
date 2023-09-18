@@ -51,6 +51,7 @@ class GitLabYamlTest {
 
 
         GitLabYaml.Pipeline pipeline = GitLabYaml.Pipeline.builder()
+                .image("ruby:latest")
                 .stage(GitLabYaml.Stage.DOWNLOAD)
                 .download(download)
                 .stage(GitLabYaml.Stage.BUILD_LST)
@@ -62,6 +63,7 @@ class GitLabYamlTest {
 
         //language=yaml
         String expected = """
+                image: ruby:latest
                 stages:
                 - download
                 - build-lst

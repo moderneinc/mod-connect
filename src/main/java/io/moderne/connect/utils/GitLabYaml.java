@@ -57,6 +57,7 @@ public class GitLabYaml {
     @Value
     @Builder
     public static class Pipeline {
+        String image;
         @Singular
         List<Stage> stages;
         Job download;
@@ -65,6 +66,7 @@ public class GitLabYaml {
 
         Map<String, Object> prepareYamlMap() {
             Map<String, Object> pipeline = new LinkedHashMap<>();
+            pipeline.put("image", image);
             pipeline.put("stages", stages);
             pipeline.put("download", download);
             pipeline.putAll(jobs);
@@ -77,7 +79,8 @@ public class GitLabYaml {
     public static class Job {
         Cache cache;
         Stage stage;
-        @Singular Map<String, Object> variables;
+        @Singular
+        Map<String, Object> variables;
         @Singular("beforeCommand")
         List<String> beforeScript;
         @Singular("command")
@@ -88,7 +91,8 @@ public class GitLabYaml {
     @Builder
     public static class Cache {
         String key;
-        @Singular List<String> paths;
+        @Singular
+        List<String> paths;
         @Builder.Default
         Policy policy = Policy.PUSH_AND_PULL;
 

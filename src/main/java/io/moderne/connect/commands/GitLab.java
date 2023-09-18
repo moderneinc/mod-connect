@@ -219,6 +219,12 @@ public class GitLab implements Callable<Integer> {
             defaultValue = "linux")
     String platform;
 
+    @CommandLine.Option(names = "--dockerImage",
+            description = "The full name of the docker image to run the build pipeline steps on.\n\n" +
+                          "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
+            defaultValue = "")
+    String dockerImage;
+
     @CommandLine.Option(
             names = "--verbose",
             defaultValue = "false",
@@ -341,6 +347,9 @@ public class GitLab implements Callable<Integer> {
             GitLabYaml.Pipeline.PipelineBuilder builder = GitLabYaml.Pipeline.builder();
             if (downloadCLI) {
                 builder.stage(GitLabYaml.Stage.DOWNLOAD).download(createDownloadJob());
+            }
+            if (StringUtils.isNotBlank(dockerImage)) {
+                builder.image(dockerImage);
             }
             return builder
                     .stage(GitLabYaml.Stage.BUILD_LST)

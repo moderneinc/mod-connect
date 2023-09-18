@@ -45,10 +45,12 @@ public class GitlabTest {
         void createPipeline() throws IOException {
             gitlab.downloadCLI = true;
             gitlab.fromCsv = Path.of("src/test/csv/gitlab-repos.csv");
+            gitlab.dockerImage = "ruby:latest";
             GitLabYaml.Pipeline pipeline = gitlab.createPipeline();
             assertThat(pipeline.getDownload()).isNotNull();
             assertThat(pipeline.getJobs().keySet()).containsExactly("build-moderneinc/git-test", "build-moderneinc/moderne-gitlab-ingest");
             assertThat(pipeline.getStages()).containsExactly(GitLabYaml.Stage.DOWNLOAD, GitLabYaml.Stage.BUILD_LST);
+            assertThat(pipeline.getImage()).isEqualTo(gitlab.dockerImage);
         }
 
         @Test
