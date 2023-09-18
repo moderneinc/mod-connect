@@ -364,7 +364,7 @@ public class GitLab implements Callable<Integer> {
             downloadCommand = String.format("%s > mod", baseCommand);
         }
 
-        String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0'";
+        String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && exit 0";
         return GitLabYaml.Job.builder()
                 .stage(GitLabYaml.Stage.DOWNLOAD)
                 .cache(GitLabYaml.Cache.builder()
