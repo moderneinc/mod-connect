@@ -327,10 +327,14 @@ public class Jenkins implements Callable<Integer> {
     private static final String GRADLE_PLUGIN = "gradle";
     private static final String CREDENTIALS_PLUGIN = "credentials-binding";
     private static final String CONFIG_FILE_PLUGIN = "config-file-provider";
-    private static final Set<String> ALL_PLUGINS = Stream.of(
-            CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN, GIT_PLUGIN,
-            GRADLE_PLUGIN, CREDENTIALS_PLUGIN, CONFIG_FILE_PLUGIN,
-            PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_CPS_PLUGIN, CLEAN_UP_PLUGIN
+    private static final Set<String> REQUIRED_PLUGINS = Stream.of(
+            CLOUDBEES_FOLDER_PLUGIN, GIT_PLUGIN, CLEAN_UP_PLUGIN, CREDENTIALS_PLUGIN
+    ).collect(Collectors.toSet());
+    private static final Set<String> FREESTYLE_PLUGINS = Stream.of(
+            GRADLE_PLUGIN
+    ).collect(Collectors.toSet());
+    private static final Set<String> PIPELINE_PLUGINS = Stream.of(
+            PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_JOB_PLUGIN, WORKFLOW_CPS_PLUGIN
     ).collect(Collectors.toSet());
 
     @RequiredArgsConstructor
@@ -349,7 +353,7 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
         FREESTYLE_MAVEN_SETTINGS_DEFINITION("cli/jenkins/freestyle_maven_settings.xml.template"),
 
-        FLOW_DEFINITION("cli/jenkins/flow_definition.xml.template"),
+        FLOW_DEFINITION("cli/jenkins/pipeline_flow_definition.xml.template"),
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
 
         PIPELINE("cli/jenkins/pipeline.groovy.template"),
@@ -529,14 +533,17 @@ public class Jenkins implements Callable<Integer> {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode node = objectMapper.readTree(pluginsResponse.getBody());
         Map<String, String> result = new HashMap<>();
-        Set<String> requiredPlugins = ALL_PLUGINS.stream()
-                // Not requiring optional plugins
-                .filter(p -> !StringUtils.isBlank(mavenSettingsConfigFileId) || !p.equals(CONFIG_FILE_PLUGIN))
-                .filter(p -> jobType == JobType.FREESTYLE || !p.equals(GRADLE_PLUGIN))
-                .filter(p -> jobType == JobType.PIPELINE || !(p.equals(PIPELINE_MODEL_DEFINITION_PLUGIN) ||
-                                                              p.equals(WORKFLOW_CPS_PLUGIN) ||
-                                                              p.equals(WORKFLOW_JOB_PLUGIN)))
-                .collect(Collectors.toSet());
+        Set<String> requiredPlugins = new HashSet<>(REQUIRED_PLUGINS);
+        if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
+            requiredPlugins.add(CONFIG_FILE_PLUGIN);
+        }
+        if (jobType == JobType.PIPELINE) {
+            requiredPlugins.addAll(PIPELINE_PLUGINS);
+        }
+        if (jobType == JobType.FREESTYLE) {
+            requiredPlugins.addAll(FREESTYLE_PLUGINS);
+        }
+
         JsonNode pluginsNode = node.get("plugins");
         int pluginsSize = pluginsNode.size();
         for (int i = 0; i < pluginsSize; i++) {
