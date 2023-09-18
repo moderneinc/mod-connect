@@ -281,7 +281,7 @@ public class GitLab implements Callable<Integer> {
             try (PrintWriter out = new PrintWriter(pipelineFile)) {
                 out.print(GitLabYaml.write(pipeline));
             }
-            return 1;
+            return 0;
         } catch (Throwable e) {
             System.err.println("ERROR configuring GitLab jobs.");
             System.err.println(e.getMessage());
