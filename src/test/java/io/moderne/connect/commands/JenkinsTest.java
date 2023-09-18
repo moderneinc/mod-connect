@@ -28,6 +28,7 @@ class JenkinsTest {
     class DownloadStage {
         @Test
         void download() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.downloadCLI = true;
             jenkins.platform = "linux";
             jenkins.cliVersion = "v0.4.4"; // TODO do we really want this hardcoded into the command option as a default value?
@@ -40,6 +41,7 @@ class JenkinsTest {
 
         @Test
         void customUrl() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.downloadCLIUrl = "https://acme.com/moderne-cli";
             assertDownloadSteps("""
                     sh "curl --request GET https://acme.com/moderne-cli --fail -o mod"
@@ -49,6 +51,7 @@ class JenkinsTest {
 
         @Test
         void credentialsAndCustomUrl() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.downloadCLIUrl = "https://acme.com/moderne-cli";
             jenkins.downloadCLICreds = "downloadCreds";
             assertDownloadSteps("""
@@ -69,6 +72,7 @@ class JenkinsTest {
     class PublishStage {
         @Test
         void withoutJava() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             assertPublishSteps("""
                     sh 'mod build . --no-download'
                     sh 'mod publish .'
@@ -77,6 +81,7 @@ class JenkinsTest {
 
         @Test
         void windows() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.platform = "windows";
             jenkins.publishUrl = "https://my.artifactory/moderne-ingest";
             jenkins.publishCredsId = "artifactCreds";
@@ -91,6 +96,7 @@ class JenkinsTest {
 
         @Test
         void skipSsl() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.publishUrl = "https://my.artifactory/moderne-ingest";
             jenkins.publishCredsId = "artifactCreds";
             jenkins.skipSSL = true;
@@ -105,6 +111,7 @@ class JenkinsTest {
 
         @Test
         void modConfigModerne() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.tenant = new Jenkins.Tenant();
             jenkins.tenant.moderneUrl = "https://app.moderne.io";
             jenkins.tenant.moderneToken = "modToken";
@@ -124,6 +131,7 @@ class JenkinsTest {
 
         @Test
         void submitJobWithMavenSettings() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.mavenSettingsConfigFileId = "maven-ingest-settings-credentials";
             assertPublishSteps("""
                     configFileProvider([configFile(fileId: 'maven-ingest-settings-credentials', variable: 'MODERNE_MVN_SETTINGS_XML')]) {
@@ -135,6 +143,7 @@ class JenkinsTest {
 
         @Test
         void submitJobWithMavenPluginVersion() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.mvnPluginVersion = "5.0.2";
             assertPublishSteps("""
                     sh 'mod build . --no-download --maven-plugin-version 5.0.2'
@@ -144,6 +153,7 @@ class JenkinsTest {
 
         @Test
         void submitJobWithGradlePluginVersion() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.gradlePluginVersion = "5.0.2";
             assertPublishSteps("""
                     sh 'mod build . --no-download --gradle-plugin-version 5.0.2'
@@ -153,6 +163,7 @@ class JenkinsTest {
 
         @Test
         void withGradleTool() {
+            jenkins.jobType = Jenkins.JobType.PIPELINE;
             assertThat(jenkins.createStagePublish("", "Gradle7", "", ""))
                     //language=groovy
                     .isEqualToIgnoringWhitespace("""

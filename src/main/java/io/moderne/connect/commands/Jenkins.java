@@ -326,6 +326,16 @@ public class Jenkins implements Callable<Integer> {
     private static final String GIT_PLUGIN = "git";
     private static final String GRADLE_PLUGIN = "gradle";
     private static final String CREDENTIALS_PLUGIN = "credentials-binding";
+    private static final String CONFIG_FILE_PLUGIN = "config-file-provider";
+    private static final Set<String> REQUIRED_PLUGINS = Stream.of(
+            CLOUDBEES_FOLDER_PLUGIN, GIT_PLUGIN, CLEAN_UP_PLUGIN, CREDENTIALS_PLUGIN
+    ).collect(Collectors.toSet());
+    private static final Set<String> FREESTYLE_PLUGINS = Stream.of(
+            GRADLE_PLUGIN
+    ).collect(Collectors.toSet());
+    private static final Set<String> PIPELINE_PLUGINS = Stream.of(
+            PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_JOB_PLUGIN, WORKFLOW_CPS_PLUGIN
+    ).collect(Collectors.toSet());
 
     @RequiredArgsConstructor
     enum Templates {
@@ -341,8 +351,9 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_MAVEN_DEFINITION("cli/jenkins/freestyle_maven.xml.template"),
         FREESTYLE_CREDENTIALS_DEFINITION("cli/jenkins/freestyle_credentials.xml.template"),
         FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
+        FREESTYLE_MAVEN_SETTINGS_DEFINITION("cli/jenkins/freestyle_maven_settings.xml.template"),
 
-        FLOW_DEFINITION("cli/jenkins/flow_definition.xml.template"),
+        FLOW_DEFINITION("cli/jenkins/pipeline_flow_definition.xml.template"),
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
 
         PIPELINE("cli/jenkins/pipeline.groovy.template"),
@@ -464,7 +475,8 @@ public class Jenkins implements Callable<Integer> {
                         String scm = createFreestyleScm(plugins, gitURL, branch);
                         String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
                         String credentials = createFreestyleCredentials(plugins);
-                        job = createFreestlyeJob(plugins, scm, steps, credentials);
+                        String configFiles = createFreestyleConfigFiles(plugins);
+                        job = createFreestlyeJob(plugins, scm, steps, credentials, configFiles);
                         break;
                     case PIPELINE:
                         String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
@@ -474,7 +486,7 @@ public class Jenkins implements Callable<Integer> {
                         job = createFlowDefinition(plugins, pipeline);
                         break;
                     default:
-                        throw new IllegalArgumentException("Unknown jobType: "+jobType.name());
+                        throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
                 }
                 responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
                 lineNumber++;
@@ -521,11 +533,17 @@ public class Jenkins implements Callable<Integer> {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode node = objectMapper.readTree(pluginsResponse.getBody());
         Map<String, String> result = new HashMap<>();
-        Set<String> requiredPlugins = Arrays.stream(
-                        new String[]{CLOUDBEES_FOLDER_PLUGIN, WORKFLOW_JOB_PLUGIN,
-                                GIT_PLUGIN, GRADLE_PLUGIN, CREDENTIALS_PLUGIN,
-                                PIPELINE_MODEL_DEFINITION_PLUGIN, WORKFLOW_CPS_PLUGIN, CLEAN_UP_PLUGIN})
-                .collect(Collectors.toSet());
+        Set<String> requiredPlugins = new HashSet<>(REQUIRED_PLUGINS);
+        if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
+            requiredPlugins.add(CONFIG_FILE_PLUGIN);
+        }
+        if (jobType == JobType.PIPELINE) {
+            requiredPlugins.addAll(PIPELINE_PLUGINS);
+        }
+        if (jobType == JobType.FREESTYLE) {
+            requiredPlugins.addAll(FREESTYLE_PLUGINS);
+        }
+
         JsonNode pluginsNode = node.get("plugins");
         int pluginsSize = pluginsNode.size();
         for (int i = 0; i < pluginsSize; i++) {
@@ -763,16 +781,25 @@ public class Jenkins implements Callable<Integer> {
             command += " " + commandSuffix;
         }
 
-        // Conditionally wrap in maven settings block
+
         if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
             String settings = isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}";
-            String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command + " --maven-settings " + settings);
-            return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, shell);
+            command += " --maven-settings " + settings;
         }
-        if (jobType == JobType.FREESTYLE) {
-            return command;
+
+        switch (jobType) {
+            case FREESTYLE:
+                return command;
+            case PIPELINE:
+                String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
+                // Conditionally wrap in maven settings block
+                if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
+                    return Templates.MAVEN_SETTINGS.format(mavenSettingsConfigFileId, shell);
+                }
+                return shell;
+            default:
+                throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
         }
-        return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
     private String createPublishCommand() {
@@ -833,17 +860,14 @@ public class Jenkins implements Callable<Integer> {
         String download = createFreestyleDownload();
         if (!StringUtils.isBlank(download)) {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(download));
-            builder.append("\n");
         }
 
         String configTenant = createConfigTenantCommand();
         if (!StringUtils.isBlank(configTenant)) {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configTenant));
-            builder.append("\n");
         }
 
         builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
-        builder.append("\n");
 
         String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
 
@@ -893,13 +917,25 @@ public class Jenkins implements Callable<Integer> {
         );
     }
 
-    private String createFreestlyeJob(Map<String, String> plugins, String scm, String steps, String credentials) {
+    private String createFreestyleConfigFiles(Map<String, String> plugins) {
+        StringBuilder files = new StringBuilder();
+        if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
+            files.append(Templates.FREESTYLE_MAVEN_SETTINGS_DEFINITION.format(
+                    plugins.get(CONFIG_FILE_PLUGIN),
+                    mavenSettingsConfigFileId
+            ));
+        }
+        return files.toString();
+    }
+
+    private String createFreestlyeJob(Map<String, String> plugins, String scm, String steps, String credentials, String configFiles) {
         return Templates.FREESTYLE_JOB_DEFINITION.format(
                 scm,
                 scheduledAt,
                 steps,
                 plugins.get(CLEAN_UP_PLUGIN),
-                credentials
+                credentials,
+                configFiles
         );
     }
 

@@ -42,6 +42,7 @@ class JenkinsIntegTest {
     private static final String ARTIFACTORY_URL = "https://artifactory.moderne.ninja/artifactory/moderne-ingest";
     private static final String ARTIFACT_CREDS = "artifactCreds";
     private static final String GIT_CREDS = "myGitCreds";
+    private static final String MAVEN_SETTINGS = "maven_settings";
     private static final String JENKINS_TESTING_USER = "admin";
     private static final String JENKINS_TESTING_PWD = "jenkins123";
     private static final String AST_PUBLISH_USERNAME = "admin";
@@ -261,6 +262,7 @@ class JenkinsIntegTest {
                     "--publishUrl", ARTIFACTORY_URL,
                     "--folder", "freestyle",
                     "--downloadCLI",
+                    "--mavenSettingsConfigFileId", MAVEN_SETTINGS,
                     "--jobType", "FREESTYLE",
                     "--verbose");
             assertEquals(0, result);
