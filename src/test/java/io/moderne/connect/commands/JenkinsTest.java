@@ -87,7 +87,7 @@ class JenkinsTest {
             jenkins.publishCredsId = "artifactCreds";
             assertPublishSteps("""
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                        powershell 'mod.exe config artifacts https://my.artifactory/moderne-ingest --user $env:ARTIFACTS_PUBLISH_CRED_USR --password $env:ARTIFACTS_PUBLISH_CRED_PWD'
+                        powershell 'mod.exe config artifacts --user=$env:ARTIFACTS_PUBLISH_CRED_USR --password=$env:ARTIFACTS_PUBLISH_CRED_PWD https://my.artifactory/moderne-ingest'
                     }
                     powershell 'mod.exe build . --no-download'
                     powershell 'mod.exe publish .'
@@ -102,7 +102,7 @@ class JenkinsTest {
             jenkins.skipSSL = true;
             assertPublishSteps("""
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                        sh 'mod config artifacts https://my.artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD} --skipSSL'
+                        sh 'mod config artifacts --skipSSL --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
                     }
                     sh 'mod build . --no-download'
                     sh 'mod publish .'
@@ -119,10 +119,10 @@ class JenkinsTest {
             jenkins.publishCredsId = "artifactCreds";
             assertPublishSteps("""
                     withCredentials([string(credentialsId: 'modToken', variable: 'MODERNE_TOKEN')]) {
-                        sh 'mod config moderne https://app.moderne.io --token ${MODERNE_TOKEN}'
+                        sh 'mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io'
                     }
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                        sh 'mod config artifacts https://my.artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}'
+                        sh 'mod config artifacts --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
                     }
                     sh 'mod build . --no-download'
                     sh 'mod publish .'

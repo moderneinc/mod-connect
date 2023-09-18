@@ -80,7 +80,7 @@ public class GitlabTest {
             gitlab.platform = "macos";
             gitlab.cliVersion = "v0.5.0";
 
-            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && mod help && exit 0",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0",
                     "curl --fail --location --output mod --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v0.5.0/moderne-cli-macos-v0.5.0'",
                     "chmod 755 mod"
             );
@@ -89,7 +89,7 @@ public class GitlabTest {
         @Test
         void customUrl() {
             gitlab.downloadCLIUrl = "https://acme.com/moderne-cli";
-            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && mod help && exit 0",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0",
                     "curl --fail --location --output mod --request GET --url 'https://acme.com/moderne-cli'",
                     "chmod 755 mod"
             );
@@ -99,7 +99,7 @@ public class GitlabTest {
         void tokenAndCustomUrl() {
             gitlab.downloadCLIUrl = "https://acme.com/moderne-cli";
             gitlab.downloadCLITokenSecretName = "CLI_DOWNLOAD_TOKEN";
-            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && mod help && exit 0",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0",
                     "curl --fail --location --output mod --request GET --url 'https://acme.com/moderne-cli' --header 'Authorization: Bearer $CLI_DOWNLOAD_TOKEN'",
                     "chmod 755 mod"
             );
@@ -110,7 +110,7 @@ public class GitlabTest {
             gitlab.downloadCLIUrl = "https://acme.com/moderne-cli";
             gitlab.downloadCLIUserNameSecretName = "CLI_DOWNLOAD_CRED_USR";
             gitlab.downloadCLIPasswordSecretName = "CLI_DOWNLOAD_CRED_PWD";
-            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && mod help && exit 0",
+            assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0",
                     "curl --fail --location --output mod --request GET --url 'https://acme.com/moderne-cli' --user $CLI_DOWNLOAD_CRED_USR:$CLI_DOWNLOAD_CRED_PWD",
                     "chmod 755 mod"
             );
@@ -141,7 +141,7 @@ public class GitlabTest {
             gitlab.publishUrl = "https://my.artifactory/moderne-ingest";
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
-            assertBuildSteps(".\\\\mod.exe config artifacts https://my.artifactory/moderne-ingest --user $PUBLISH_USER --password $PUBLISH_SECRET",
+            assertBuildSteps(".\\\\mod.exe config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     ".\\\\mod.exe build . --no-download --active-style some-style --additional-build-args \"--magic\"",
                     ".\\\\mod.exe publish .");
         }
@@ -153,7 +153,7 @@ public class GitlabTest {
             gitlab.publishUserSecretName = "PUBLISH_USER";
             gitlab.skipSSL = true;
             assertBuildSteps(
-                    "./mod config artifacts https://my.artifactory/moderne-ingest --user $PUBLISH_USER --password $PUBLISH_SECRET --skipSSL",
+                    "./mod config artifacts --skipSSL --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
                     "./mod publish ."
             );
@@ -168,8 +168,8 @@ public class GitlabTest {
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(
-                    "./mod config moderne https://app.moderne.io --token modToken",
-                    "./mod config artifacts https://my.artifactory/moderne-ingest --user $PUBLISH_USER --password $PUBLISH_SECRET",
+                    "./mod config moderne --token=modToken https://app.moderne.io",
+                    "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
                     "./mod publish ."
             );
@@ -183,8 +183,8 @@ public class GitlabTest {
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(
-                    "./mod config moderne https://app.moderne.io --token ${MODERNE_TOKEN}",
-                    "./mod config artifacts https://my.artifactory/moderne-ingest --user $PUBLISH_USER --password $PUBLISH_SECRET",
+                    "./mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io",
+                    "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
                     "./mod publish ."
             );
@@ -199,8 +199,8 @@ public class GitlabTest {
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(
-                    "./mod config moderne https://app.moderne.io --token $SECRET",
-                    "./mod config artifacts https://my.artifactory/moderne-ingest --user $PUBLISH_USER --password $PUBLISH_SECRET",
+                    "./mod config moderne --token=$SECRET https://app.moderne.io",
+                    "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
                     "./mod publish ."
             );

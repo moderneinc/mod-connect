@@ -417,14 +417,12 @@ public class GitLab implements Callable<Integer> {
         if (publishUrl == null) {
             return ""; // for unit tests, will always be non-null in production
         }
-        String args = String.format("config artifacts --user=%s --password=%s  %s",
+        String args = String.format("config artifacts %s--user=%s --password=%s %s",
+                skipSSL ? "--skipSSL " : "",
                 variable(publishUserSecretName),
                 variable(publishPwdSecretName),
                 publishUrl
         );
-        if (skipSSL) {
-            args += " --skipSSL";
-        }
         return modCommand(args);
     }
 
