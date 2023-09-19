@@ -265,8 +265,8 @@ class JenkinsIntegTest {
                     "--folder", "freestyle",
                     "--downloadCLI",
                     "--mavenSettingsConfigFileId", MAVEN_SETTINGS,
-                    "--moderneUrl", MODERNE_URL,
-                    "--moderneToken", MODERNE_TOKEN,
+                    "--moderneUrl=" + MODERNE_URL,
+                    "--moderneToken=" + MODERNE_TOKEN,
                     "--jobType", "FREESTYLE",
                     "--verbose");
             assertEquals(0, result);
