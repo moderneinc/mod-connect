@@ -47,6 +47,10 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
+            <command>./mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
             <command>./mod config artifacts --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
@@ -76,6 +80,7 @@ echo "ingest.gradle" >> .git/info/exclude;
             <projectProperties/>
             <passAllAsProjectProperties>false</passAllAsProjectProperties>
         </hudson.plugins.gradle.Gradle>
+
         <hudson.tasks.Shell>
             <command>./mod publish .</command>
             <configuredLocalRules/>
@@ -115,8 +120,14 @@ echo "ingest.gradle" >> .git/info/exclude;
                     <usernameVariable>ARTIFACTS_PUBLISH_CRED_USR</usernameVariable>
                     <passwordVariable>ARTIFACTS_PUBLISH_CRED_PWD</passwordVariable>
                 </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+                <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+                    <credentialsId>modToken</credentialsId>
+                    <variable>MODERNE_TOKEN</variable>
+                </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+
             </bindings>
         </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+
         <org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper plugin="config-file-provider@953.v0432a_802e4d2">
             <managedFiles>
                 <org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
@@ -126,5 +137,6 @@ echo "ingest.gradle" >> .git/info/exclude;
                 </org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
             </managedFiles>
         </org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper>
+
     </buildWrappers>
 </project>
