@@ -35,8 +35,10 @@ import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.SPLIT_
 public class GitLabYaml {
 
     public enum Stage {
+
         @JsonProperty("download")
         DOWNLOAD,
+
         @JsonProperty("build-lst")
         BUILD_LST
     }
@@ -60,9 +62,11 @@ public class GitLabYaml {
     @Value
     @Builder
     public static class Pipeline {
+
         @Singular
         List<Stage> stages;
         Job download;
+
         @Singular
         Map<String, Job> jobs;
 
@@ -81,20 +85,27 @@ public class GitLabYaml {
         String image;
         Cache cache;
         Stage stage;
+
         @Singular
         Map<String, Object> variables;
+
         @Singular("beforeCommand")
         List<String> beforeScript;
+
         @Singular("command")
         List<String> script;
+
+        Artifacts artifacts;
     }
 
     @Value
     @Builder
     public static class Cache {
         String key;
+
         @Singular
         List<String> paths;
+
         @Builder.Default
         Policy policy = Policy.PUSH_AND_PULL;
 
@@ -102,10 +113,32 @@ public class GitLabYaml {
 
             @JsonProperty("push")
             PUSH,
+
             @JsonProperty("pull")
             PULL,
+
             @JsonProperty("pull-push")
             PUSH_AND_PULL;
+        }
+    }
+
+    @Value
+    @Builder
+    public static class Artifacts {
+        When when;
+        @Singular
+        List<String> paths;
+
+        public enum When {
+
+            @JsonProperty("always")
+            ALWAYS,
+
+            @JsonProperty("on_failure")
+            ON_FAILURE,
+
+            @JsonProperty("on_success")
+            ON_SUCCESS;
         }
     }
 

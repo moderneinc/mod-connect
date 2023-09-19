@@ -227,14 +227,6 @@ public class GitlabTest {
         }
 
         @Test
-        void outputBuildLogOnVerbose() {
-            gitlab.gradlePluginVersion = "5.0.2";
-            gitlab.verbose = true;
-            assertBuildSteps("./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\" --gradle-plugin-version 5.0.2 || ( cat .moderne/build/*/build.log && exit 1 )",
-                    "./mod publish $REPO_PATH");
-        }
-
-        @Test
         void installGitOnDefaultImage() {
             gitlab.gradlePluginVersion = "5.0.2";
             gitlab.dockerImageBuildJob = "eclipse-temurin:17-jdk-jammy";
@@ -273,6 +265,8 @@ public class GitlabTest {
                     .containsEntry("REPO_PATH", "org/repo-path");
             assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);
             assertThat(build.getScript()).containsExactlyElementsOf(scriptCommands);
+            assertThat(build.getArtifacts().getWhen()).isEqualTo(GitLabYaml.Artifacts.When.ON_FAILURE);
+            assertThat(build.getArtifacts().getPaths()).containsExactly(".moderne/build/*/build.log");
         }
     }
 }

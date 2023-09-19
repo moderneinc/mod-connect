@@ -421,6 +421,10 @@ public class GitLab implements Callable<Integer> {
         return builder
                 .command(createBuildCommand(activeStyle, additionalBuildArgs))
                 .command(createPublishCommand())
+                .artifacts(GitLabYaml.Artifacts.builder()
+                        .when(GitLabYaml.Artifacts.When.ON_FAILURE)
+                        .path(".moderne/build/*/build.log")
+                        .build())
                 .build();
     }
 
@@ -474,11 +478,7 @@ public class GitLab implements Callable<Integer> {
         if (!StringUtils.isBlank(commandSuffix)) {
             args += " " + commandSuffix;
         }
-        String buildCommand = modCommand(args);
-        if (verbose) {
-            buildCommand += " || ( cat .moderne/build/*/build.log && exit 1 )";
-        }
-        return buildCommand;
+        return modCommand(args);
     }
 
     String createPublishCommand() {
