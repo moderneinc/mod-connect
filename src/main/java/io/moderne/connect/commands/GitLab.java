@@ -20,7 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
 import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -374,11 +377,12 @@ public class GitLab implements Callable<Integer> {
             downloadCommand = String.format("%s --user %s:%s", baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
         }
 
+
         String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0";
         return GitLabYaml.Job.builder()
                 .stage(GitLabYaml.Stage.DOWNLOAD)
                 .cache(GitLabYaml.Cache.builder()
-                        .key(String.format("cli-%s-%s", platform, cliVersion)) // todo cliVersion may not be set if downloadUrl is used
+                        .key(createCliCacheKey())
                         .path("mod")
                         .policy(GitLabYaml.Cache.Policy.PUSH_AND_PULL).build())
                 .command(ifFileExistsExit)
@@ -396,7 +400,7 @@ public class GitLab implements Callable<Integer> {
         builder.image(dockerImageBuildJob)
                 .stage(GitLabYaml.Stage.BUILD_LST)
                 .cache(GitLabYaml.Cache.builder()
-                        .key(String.format("cli-%s-%s", platform, cliVersion))
+                        .key(createCliCacheKey())
                         .path("mod")
                         .policy(GitLabYaml.Cache.Policy.PULL).build())
                 .variable("REPO_PATH", repoPath)
@@ -497,6 +501,10 @@ public class GitLab implements Callable<Integer> {
 
     private boolean isWindowsPlatform() {
         return PLATFORM_WINDOWS.equals(platform);
+    }
+
+    private String createCliCacheKey() {
+        return StringUtils.isBlank(downloadCLIUrl) ? String.format("cli-%s-%s", platform, cliVersion) : String.format("cli-%s", new String(Base64.getEncoder().encode(downloadCLIUrl.getBytes())));
     }
 
 }
