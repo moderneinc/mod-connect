@@ -24,9 +24,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.List;
 
-import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GitlabTest {
@@ -45,12 +44,12 @@ public class GitlabTest {
         void createPipeline() throws IOException {
             gitlab.downloadCLI = true;
             gitlab.fromCsv = Path.of("src/test/csv/gitlab-repos.csv");
-            gitlab.dockerImage = "ruby:latest";
+            gitlab.dockerImageBuildJob = "ruby:latest";
             GitLabYaml.Pipeline pipeline = gitlab.createPipeline();
             assertThat(pipeline.getDownload()).isNotNull();
             assertThat(pipeline.getJobs().keySet()).containsExactly("build-moderneinc/git-test", "build-moderneinc/moderne-gitlab-ingest");
+            assertThat(pipeline.getJobs().values()).extracting(GitLabYaml.Job::getImage).containsExactly("ruby:latest", "ruby:latest");
             assertThat(pipeline.getStages()).containsExactly(GitLabYaml.Stage.DOWNLOAD, GitLabYaml.Stage.BUILD_LST);
-            assertThat(pipeline.getImage()).isEqualTo(gitlab.dockerImage);
         }
 
         @Test
@@ -131,8 +130,8 @@ public class GitlabTest {
         @Test
         void withoutJava() {
             assertBuildSteps(
-                    "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
-                    "./mod publish .");
+                    "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "./mod publish $REPO_PATH");
         }
 
         @Test
@@ -142,8 +141,8 @@ public class GitlabTest {
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(".\\\\mod.exe config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
-                    ".\\\\mod.exe build . --no-download --active-style some-style --additional-build-args \"--magic\"",
-                    ".\\\\mod.exe publish .");
+                    ".\\\\mod.exe build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    ".\\\\mod.exe publish $REPO_PATH");
         }
 
         @Test
@@ -154,8 +153,8 @@ public class GitlabTest {
             gitlab.skipSSL = true;
             assertBuildSteps(
                     "./mod config artifacts --skipSSL --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
-                    "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
-                    "./mod publish ."
+                    "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "./mod publish $REPO_PATH"
             );
         }
 
@@ -170,8 +169,8 @@ public class GitlabTest {
             assertBuildSteps(
                     "./mod config moderne --token=modToken https://app.moderne.io",
                     "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
-                    "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
-                    "./mod publish ."
+                    "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "./mod publish $REPO_PATH"
             );
         }
 
@@ -185,8 +184,8 @@ public class GitlabTest {
             assertBuildSteps(
                     "./mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io",
                     "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
-                    "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
-                    "./mod publish ."
+                    "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "./mod publish $REPO_PATH"
             );
         }
 
@@ -201,26 +200,63 @@ public class GitlabTest {
             assertBuildSteps(
                     "./mod config moderne --token=$SECRET https://app.moderne.io",
                     "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
-                    "./mod build . --no-download --active-style some-style --additional-build-args \"--magic\"",
-                    "./mod publish ."
+                    "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "./mod publish $REPO_PATH"
             );
         }
 
         @Test
         void submitJobWithMavenPluginVersion() {
             gitlab.mvnPluginVersion = "5.0.2";
-            assertBuildSteps("./mod build . --no-download --active-style some-style --additional-build-args \"--magic\" --maven-plugin-version 5.0.2",
-                    "./mod publish .");
+            assertBuildSteps("./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\" --maven-plugin-version 5.0.2",
+                    "./mod publish $REPO_PATH");
         }
 
         @Test
         void submitJobWithGradlePluginVersion() {
             gitlab.gradlePluginVersion = "5.0.2";
-            assertBuildSteps("./mod build . --no-download --active-style some-style --additional-build-args \"--magic\" --gradle-plugin-version 5.0.2",
-                    "./mod publish .");
+            assertBuildSteps("./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\" --gradle-plugin-version 5.0.2",
+                    "./mod publish $REPO_PATH");
+        }
+
+        @Test
+        void outputBuildLogOnVerbose() {
+            gitlab.gradlePluginVersion = "5.0.2";
+            gitlab.verbose = true;
+            assertBuildSteps("./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\" --gradle-plugin-version 5.0.2 || ( cat .moderne/build/*/build.log && exit 1 )",
+                    "./mod publish $REPO_PATH");
+        }
+
+        @Test
+        void installGitOnDefaultImage() {
+            gitlab.gradlePluginVersion = "5.0.2";
+            gitlab.dockerImageBuildJob = "eclipse-temurin:17-jdk-jammy";
+            //language=bash
+            assertBuildSteps(List.of(
+                            "git --version || apt-get -qq update && apt-get -qq install -y git",
+                            "BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
+                            "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
+                            "rm -fr $REPO_PATH",
+                            "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
+                            "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
+                    )
+                    , List.of(
+                            "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\" --gradle-plugin-version 5.0.2",
+                            "./mod publish $REPO_PATH"
+                    ));
         }
 
         void assertBuildSteps(@Language("bash") String... scriptCommands) {
+            assertBuildSteps(List.of(
+                    "BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
+                    "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
+                    "rm -fr $REPO_PATH",
+                    "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
+                    "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
+            ), List.of(scriptCommands));
+        }
+
+        void assertBuildSteps(List<String> beforeScriptCommands, List<String> scriptCommands) {
             GitLabYaml.Job build = gitlab.createBuildLstJob("org/repo-path", "main", "some-style", "--magic");
             assertThat(build.getStage()).isEqualTo(GitLabYaml.Stage.BUILD_LST);
             assertThat(build.getCache().getPolicy()).isEqualTo(GitLabYaml.Cache.Policy.PULL);
@@ -228,12 +264,8 @@ public class GitlabTest {
             assertThat(build.getCache().getPaths()).containsExactly("mod");
             assertThat(build.getVariables())
                     .containsEntry("REPO_PATH", "org/repo-path");
-            assertThat(build.getBeforeScript()).containsExactly("BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
-                    "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
-                    "REPO_DIR=$REPO_PATH",
-                    "rm -fr $REPO_DIR",
-                    "git clone --single-branch --branch main $REPO_URL $REPO_DIR");
-            assertThat(build.getScript()).containsExactly(scriptCommands);
+            assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);
+            assertThat(build.getScript()).containsExactlyElementsOf(scriptCommands);
         }
     }
 }

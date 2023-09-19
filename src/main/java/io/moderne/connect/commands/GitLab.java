@@ -219,11 +219,17 @@ public class GitLab implements Callable<Integer> {
             defaultValue = "linux")
     String platform;
 
-    @CommandLine.Option(names = "--dockerImage",
-            description = "The full name of the docker image to run the build pipeline steps on.\n\n" +
+    @CommandLine.Option(names = "--dockerImageBuildJob",
+            description = "The full name of the docker image to run the build jobs on.\n\n" +
                           "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
-            defaultValue = "")
-    String dockerImage;
+            defaultValue = "eclipse-temurin:17-jdk-jammy")
+    String dockerImageBuildJob;
+
+    @CommandLine.Option(names = "--dockerImageDownloadJob",
+            description = "The full name of the docker image to run the download job on.\n\n" +
+                          "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
+            defaultValue = "ruby:latest")
+    String dockerImageDownloadJob;
 
     @CommandLine.Option(
             names = "--verbose",
@@ -348,9 +354,6 @@ public class GitLab implements Callable<Integer> {
             if (downloadCLI) {
                 builder.stage(GitLabYaml.Stage.DOWNLOAD).download(createDownloadJob());
             }
-            if (StringUtils.isNotBlank(dockerImage)) {
-                builder.image(dockerImage);
-            }
             return builder
                     .stage(GitLabYaml.Stage.BUILD_LST)
                     .jobs(buildJobs)
@@ -375,17 +378,22 @@ public class GitLab implements Callable<Integer> {
         return GitLabYaml.Job.builder()
                 .stage(GitLabYaml.Stage.DOWNLOAD)
                 .cache(GitLabYaml.Cache.builder()
-                        .key(String.format("cli-%s-%s", platform, cliVersion))
+                        .key(String.format("cli-%s-%s", platform, cliVersion)) // todo cliVersion may not be set if downloadUrl is used
                         .path("mod")
                         .policy(GitLabYaml.Cache.Policy.PUSH_AND_PULL).build())
                 .command(ifFileExistsExit)
                 .command(downloadCommand)
                 .command("chmod 755 mod")
+                .image(dockerImageDownloadJob)
                 .build();
     }
 
     GitLabYaml.Job createBuildLstJob(String repoPath, String branch, String activeStyle, String additionalBuildArgs) {
-        GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder()
+        GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder();
+        if ("eclipse-temurin:17-jdk-jammy".equals(dockerImageBuildJob)) {
+            builder.beforeCommand("git --version || apt-get -qq update && apt-get -qq install -y git"); // todo use a base image with git installed
+        }
+        builder.image(dockerImageBuildJob)
                 .stage(GitLabYaml.Stage.BUILD_LST)
                 .cache(GitLabYaml.Cache.builder()
                         .key(String.format("cli-%s-%s", platform, cliVersion))
@@ -394,9 +402,9 @@ public class GitLab implements Callable<Integer> {
                 .variable("REPO_PATH", repoPath)
                 .beforeCommand("BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`")
                 .beforeCommand("REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"")
-                .beforeCommand("REPO_DIR=$REPO_PATH")
-                .beforeCommand("rm -fr $REPO_DIR")
-                .beforeCommand(String.format("git clone --single-branch --branch %s $REPO_URL $REPO_DIR", branch));
+                .beforeCommand("rm -fr $REPO_PATH")
+                .beforeCommand(String.format("git clone --single-branch --branch %s $REPO_URL $REPO_PATH", branch))
+                .beforeCommand("echo '127.0.0.1  host.docker.internal' >> /etc/hosts"); // required for org.openrewrite.polyglot.RemoteProgressBarReceiver to work inside gitlab docker container
 
         String tenantCommand = createConfigTenantCommand();
         if (StringUtils.isNotBlank(tenantCommand)) {
@@ -443,7 +451,7 @@ public class GitLab implements Callable<Integer> {
     }
 
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
-        String args = "build . --no-download";
+        String args = "build $REPO_PATH --no-download";
         if (!StringUtils.isBlank(activeStyle)) {
             args += " --active-style " + activeStyle;
         }
@@ -462,11 +470,15 @@ public class GitLab implements Callable<Integer> {
         if (!StringUtils.isBlank(commandSuffix)) {
             args += " " + commandSuffix;
         }
-        return modCommand(args);
+        String buildCommand = modCommand(args);
+        if (verbose) {
+            buildCommand += " || ( cat .moderne/build/*/build.log && exit 1 )";
+        }
+        return buildCommand;
     }
 
     String createPublishCommand() {
-        return modCommand("publish .");
+        return modCommand("publish $REPO_PATH");
     }
 
     private String modCommand(String args) {

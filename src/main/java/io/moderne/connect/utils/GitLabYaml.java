@@ -30,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.SPLIT_LINES;
+
 public class GitLabYaml {
 
     public enum Stage {
@@ -41,7 +43,8 @@ public class GitLabYaml {
 
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory()
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-            .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
+            .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+            .disable(SPLIT_LINES))
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
 
@@ -57,7 +60,6 @@ public class GitLabYaml {
     @Value
     @Builder
     public static class Pipeline {
-        String image;
         @Singular
         List<Stage> stages;
         Job download;
@@ -66,7 +68,6 @@ public class GitLabYaml {
 
         Map<String, Object> prepareYamlMap() {
             Map<String, Object> pipeline = new LinkedHashMap<>();
-            pipeline.put("image", image);
             pipeline.put("stages", stages);
             pipeline.put("download", download);
             pipeline.putAll(jobs);
@@ -77,6 +78,7 @@ public class GitLabYaml {
     @Value
     @Builder
     public static class Job {
+        String image;
         Cache cache;
         Stage stage;
         @Singular

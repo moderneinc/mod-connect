@@ -51,7 +51,6 @@ class GitLabYamlTest {
 
 
         GitLabYaml.Pipeline pipeline = GitLabYaml.Pipeline.builder()
-                .image("ruby:latest")
                 .stage(GitLabYaml.Stage.DOWNLOAD)
                 .download(download)
                 .stage(GitLabYaml.Stage.BUILD_LST)
@@ -63,7 +62,7 @@ class GitLabYamlTest {
 
         //language=yaml
         String expected = """
-                image: ruby:latest
+                
                 stages:
                 - download
                 - build-lst
@@ -80,6 +79,7 @@ class GitLabYamlTest {
                   script:
                   - echo "download CLI if not exists"
                 build-a:
+                  image: ruby:latest
                   cache:
                     key: key
                     paths:
@@ -93,6 +93,7 @@ class GitLabYamlTest {
                   script:
                   - echo "Building LST"
                 build-b:
+                  image: ruby:latest
                   cache:
                     key: key
                     paths:
