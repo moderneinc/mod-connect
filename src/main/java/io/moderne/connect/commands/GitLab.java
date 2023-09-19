@@ -407,7 +407,7 @@ public class GitLab implements Callable<Integer> {
                         .policy(GitLabYaml.Cache.Policy.PULL).build())
                 .variable("REPO_PATH", repoPath)
                 .beforeCommand("BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`")
-                .beforeCommand("REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"")
+                .beforeCommand("REPO_URL=\"$BASE_URL/$REPO_PATH.git\"")
                 .beforeCommand("rm -fr $REPO_PATH")
                 .beforeCommand(String.format("git clone --single-branch --branch %s $REPO_URL $REPO_PATH", branch))
                 .beforeCommand("echo '127.0.0.1  host.docker.internal' >> /etc/hosts"); // required for org.openrewrite.polyglot.RemoteProgressBarReceiver to work inside gitlab docker container

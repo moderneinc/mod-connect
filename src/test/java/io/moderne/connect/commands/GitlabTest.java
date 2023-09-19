@@ -234,7 +234,7 @@ class GitlabTest {
             assertBuildSteps(List.of(
                             "git --version || apt-get -qq update && apt-get -qq install -y git",
                             "BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
-                            "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
+                            "REPO_URL=\"$BASE_URL/$REPO_PATH.git\"",
                             "rm -fr $REPO_PATH",
                             "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
                             "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
@@ -248,7 +248,7 @@ class GitlabTest {
         void assertBuildSteps(@Language("bash") String... scriptCommands) {
             assertBuildSteps(List.of(
                     "BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
-                    "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
+                    "REPO_URL=\"$BASE_URL/$REPO_PATH.git\"",
                     "rm -fr $REPO_PATH",
                     "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
                     "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
