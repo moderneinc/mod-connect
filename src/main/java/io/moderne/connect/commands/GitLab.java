@@ -20,8 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
 import java.io.*;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -426,7 +424,7 @@ public class GitLab implements Callable<Integer> {
                 .command(createBuildCommand(activeStyle, additionalBuildArgs))
                 .command(createPublishCommand())
                 .artifacts(GitLabYaml.Artifacts.builder()
-                        .when(GitLabYaml.Artifacts.When.ON_FAILURE)
+                        .when(GitLabYaml.Artifacts.When.ALWAYS)
                         .path("$REPO_PATH/.moderne/build/*/build.log")
                         .build())
                 .build();

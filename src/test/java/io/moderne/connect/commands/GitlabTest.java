@@ -30,7 +30,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GitlabTest {
+class GitlabTest {
     GitLab gitlab = new GitLab();
 
     @BeforeEach
@@ -265,7 +265,7 @@ public class GitlabTest {
                     .containsEntry("REPO_PATH", "org/repo-path");
             assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);
             assertThat(build.getScript()).containsExactlyElementsOf(scriptCommands);
-            assertThat(build.getArtifacts().getWhen()).isEqualTo(GitLabYaml.Artifacts.When.ON_FAILURE);
+            assertThat(build.getArtifacts().getWhen()).isEqualTo(GitLabYaml.Artifacts.When.ALWAYS);
             assertThat(build.getArtifacts().getPaths()).containsExactly("$REPO_PATH/.moderne/build/*/build.log");
         }
     }

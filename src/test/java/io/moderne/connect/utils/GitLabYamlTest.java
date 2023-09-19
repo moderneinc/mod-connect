@@ -24,10 +24,8 @@ import static io.moderne.connect.utils.GitLabYaml.write;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class GitLabYamlTest {
-
     @Test
     void writePipelineYaml() {
-
         GitLabYaml.Job download = GitLabYaml.Job.builder()
                 .cache(GitLabYaml.Cache.builder().key("cli-v4.4.0")
                         .paths(List.of("mod"))
@@ -108,7 +106,5 @@ class GitLabYamlTest {
                   - echo "Building LST"
                 """;
         assertThat(yaml).isEqualTo(expected);
-
     }
-
 }
