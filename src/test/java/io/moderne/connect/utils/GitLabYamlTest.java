@@ -47,6 +47,7 @@ class GitLabYamlTest {
                 .stage(GitLabYaml.Stage.BUILD_LST)
                 .variables(Map.of("GITLAB_HOST", "gitlab.com"))
                 .command("echo \"Building LST\"")
+                .image("ruby:latest")
                 .build();
 
 
@@ -62,7 +63,6 @@ class GitLabYamlTest {
 
         //language=yaml
         String expected = """
-                
                 stages:
                 - download
                 - build-lst
