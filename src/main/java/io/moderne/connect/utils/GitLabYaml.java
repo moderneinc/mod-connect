@@ -30,18 +30,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.SPLIT_LINES;
+
 public class GitLabYaml {
 
     public enum Stage {
+
         @JsonProperty("download")
         DOWNLOAD,
+
         @JsonProperty("build-lst")
         BUILD_LST
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory()
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-            .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
+            .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+            .disable(SPLIT_LINES))
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
 
@@ -57,16 +62,16 @@ public class GitLabYaml {
     @Value
     @Builder
     public static class Pipeline {
-        String image;
+
         @Singular
         List<Stage> stages;
         Job download;
+
         @Singular
         Map<String, Job> jobs;
 
         Map<String, Object> prepareYamlMap() {
             Map<String, Object> pipeline = new LinkedHashMap<>();
-            pipeline.put("image", image);
             pipeline.put("stages", stages);
             pipeline.put("download", download);
             pipeline.putAll(jobs);
@@ -77,22 +82,30 @@ public class GitLabYaml {
     @Value
     @Builder
     public static class Job {
+        String image;
         Cache cache;
         Stage stage;
+
         @Singular
         Map<String, Object> variables;
+
         @Singular("beforeCommand")
         List<String> beforeScript;
+
         @Singular("command")
         List<String> script;
+
+        Artifacts artifacts;
     }
 
     @Value
     @Builder
     public static class Cache {
         String key;
+
         @Singular
         List<String> paths;
+
         @Builder.Default
         Policy policy = Policy.PUSH_AND_PULL;
 
@@ -100,10 +113,32 @@ public class GitLabYaml {
 
             @JsonProperty("push")
             PUSH,
+
             @JsonProperty("pull")
             PULL,
+
             @JsonProperty("pull-push")
             PUSH_AND_PULL;
+        }
+    }
+
+    @Value
+    @Builder
+    public static class Artifacts {
+        When when;
+        @Singular
+        List<String> paths;
+
+        public enum When {
+
+            @JsonProperty("always")
+            ALWAYS,
+
+            @JsonProperty("on_failure")
+            ON_FAILURE,
+
+            @JsonProperty("on_success")
+            ON_SUCCESS;
         }
     }
 
