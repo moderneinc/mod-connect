@@ -350,7 +350,8 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_GRADLE_DEFINITION("cli/jenkins/freestyle_gradle.xml.template"),
         FREESTYLE_MAVEN_DEFINITION("cli/jenkins/freestyle_maven.xml.template"),
         FREESTYLE_CREDENTIALS_DEFINITION("cli/jenkins/freestyle_credentials.xml.template"),
-        FREESTYLE_CREDENTIALS_BINDING_DEFINITION("cli/jenkins/freestyle_credentials_binding.xml.template"),
+        FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION("cli/jenkins/freestyle_credentials_binding_user.xml.template"),
+        FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION("cli/jenkins/freestyle_credentials_binding_token.xml.template"),
         FREESTYLE_MAVEN_SETTINGS_DEFINITION("cli/jenkins/freestyle_maven_settings.xml.template"),
 
         FLOW_DEFINITION("cli/jenkins/pipeline_flow_definition.xml.template"),
@@ -906,10 +907,13 @@ public class Jenkins implements Callable<Integer> {
 
     private String createFreestyleCredentials(Map<String, String> plugins) {
         StringBuilder bindings = new StringBuilder();
-        bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_DEFINITION.format(publishCredsId, "ARTIFACTS_PUBLISH_CRED_USR", "ARTIFACTS_PUBLISH_CRED_PWD"));
+        bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION.format(publishCredsId, "ARTIFACTS_PUBLISH_CRED_USR", "ARTIFACTS_PUBLISH_CRED_PWD"));
+        if (tenant != null && !StringUtils.isBlank(tenant.moderneToken)) {
+            bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION.format(tenant.moderneToken, "MODERNE_TOKEN"));
+        }
         if (!StringUtils.isBlank(downloadCLICreds)) {
             bindings.append("\n");
-            bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_DEFINITION.format(downloadCLICreds, "CLI_DOWNLOAD_CRED_USR", "CLI_DOWNLOAD_CRED_PWD"));
+            bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION.format(downloadCLICreds, "CLI_DOWNLOAD_CRED_USR", "CLI_DOWNLOAD_CRED_PWD"));
         }
         return Templates.FREESTYLE_CREDENTIALS_DEFINITION.format(
                 plugins.get(CREDENTIALS_PLUGIN),

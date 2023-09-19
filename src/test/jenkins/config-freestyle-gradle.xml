@@ -47,6 +47,10 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
+            <command>./mod config moderne https://app.moderne.io --token ${MODERNE_TOKEN}</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
             <command>./mod config artifacts https://artifactory.moderne.ninja/artifactory/moderne-ingest --user ${ARTIFACTS_PUBLISH_CRED_USR} --password ${ARTIFACTS_PUBLISH_CRED_PWD}</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
@@ -114,7 +118,10 @@ echo "ingest.gradle" >> .git/info/exclude;
                     <credentialsId>artifactCreds</credentialsId>
                     <usernameVariable>ARTIFACTS_PUBLISH_CRED_USR</usernameVariable>
                     <passwordVariable>ARTIFACTS_PUBLISH_CRED_PWD</passwordVariable>
-                </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+                </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>        <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+                <credentialsId>modToken</credentialsId>
+                <variable>MODERNE_TOKEN</variable>
+            </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>amePasswordMultiBinding&gt;
             </bindings>
         </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
         <org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper plugin="config-file-provider@953.v0432a_802e4d2">

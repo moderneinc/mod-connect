@@ -43,6 +43,8 @@ class JenkinsIntegTest {
     private static final String ARTIFACT_CREDS = "artifactCreds";
     private static final String GIT_CREDS = "myGitCreds";
     private static final String MAVEN_SETTINGS = "maven_settings";
+    private static final String MODERNE_URL = "https://app.moderne.io";
+    private static final String MODERNE_TOKEN = "modToken";
     private static final String JENKINS_TESTING_USER = "admin";
     private static final String JENKINS_TESTING_PWD = "jenkins123";
     private static final String AST_PUBLISH_USERNAME = "admin";
@@ -263,6 +265,8 @@ class JenkinsIntegTest {
                     "--folder", "freestyle",
                     "--downloadCLI",
                     "--mavenSettingsConfigFileId", MAVEN_SETTINGS,
+                    "--moderneUrl", MODERNE_URL,
+                    "--moderneToken", MODERNE_TOKEN,
                     "--jobType", "FREESTYLE",
                     "--verbose");
             assertEquals(0, result);
