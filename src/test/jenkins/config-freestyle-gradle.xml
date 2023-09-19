@@ -118,10 +118,11 @@ echo "ingest.gradle" >> .git/info/exclude;
                     <credentialsId>artifactCreds</credentialsId>
                     <usernameVariable>ARTIFACTS_PUBLISH_CRED_USR</usernameVariable>
                     <passwordVariable>ARTIFACTS_PUBLISH_CRED_PWD</passwordVariable>
-                </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>        <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
-                <credentialsId>modToken</credentialsId>
-                <variable>MODERNE_TOKEN</variable>
-            </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>amePasswordMultiBinding&gt;
+                </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+                <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+                    <credentialsId>modToken</credentialsId>
+                    <variable>MODERNE_TOKEN</variable>
+                </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
             </bindings>
         </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
         <org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper plugin="config-file-provider@953.v0432a_802e4d2">
