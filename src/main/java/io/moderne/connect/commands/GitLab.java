@@ -437,8 +437,8 @@ public class GitLab implements Callable<Integer> {
         }
         String args = String.format("config artifacts %s--user=%s --password=%s %s",
                 skipSSL ? "--skipSSL " : "",
-                variable(publishUserSecretName),
-                variable(publishPwdSecretName),
+                publishUserSecretName,
+                publishPwdSecretName,
                 publishUrl
         );
         return modCommand(args);
@@ -451,7 +451,7 @@ public class GitLab implements Callable<Integer> {
         boolean isWindowsPlatform = isWindowsPlatform();
         String token = tenant.moderneToken;
         if (tenant.moderneTokenSecret != null) {
-            token = variable(tenant.moderneTokenSecret);
+            token = tenant.moderneTokenSecret;
         }
         if (token == null) {
             token = isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}";
