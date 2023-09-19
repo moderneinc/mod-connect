@@ -16,6 +16,7 @@
 package io.moderne.connect.commands;
 
 import io.moderne.connect.utils.GitLabYaml;
+import org.apache.commons.lang3.StringUtils;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,7 +120,12 @@ public class GitlabTest {
         void assertDownloadSteps(@Language("bash") String... expectation) {
             GitLabYaml.Job job = gitlab.createDownloadJob();
             assertThat(job.getStage()).isEqualTo(GitLabYaml.Stage.DOWNLOAD);
-            assertThat(job.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
+            if (StringUtils.isBlank(gitlab.downloadCLIUrl)) {
+                assertThat(job.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
+            } else {
+                String encoded = new String(Base64.getEncoder().encode(gitlab.downloadCLIUrl.getBytes()));
+                assertThat(job.getCache().getKey()).isEqualTo(String.format("cli-%s", encoded));
+            }
 
             assertThat(job.getScript())
                     .containsExactly(expectation);

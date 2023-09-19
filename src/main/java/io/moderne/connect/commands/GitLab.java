@@ -504,7 +504,11 @@ public class GitLab implements Callable<Integer> {
     }
 
     private String createCliCacheKey() {
-        return StringUtils.isBlank(downloadCLIUrl) ? String.format("cli-%s-%s", platform, cliVersion) : String.format("cli-%s", new String(Base64.getEncoder().encode(downloadCLIUrl.getBytes())));
+        if (StringUtils.isBlank(downloadCLIUrl)) {
+            return String.format("cli-%s-%s", platform, cliVersion);
+        }
+        String encodedUrl = new String(Base64.getEncoder().encode(downloadCLIUrl.getBytes()));
+        return String.format("cli-%s", encodedUrl);
     }
 
 }
