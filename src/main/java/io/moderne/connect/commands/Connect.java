@@ -25,6 +25,7 @@ import picocli.CommandLine.HelpCommand;
                 HelpCommand.class,
                 Jenkins.class,
                 GitHub.class,
+                GitLab.class,
                 Version.class
         })
 public class Connect {

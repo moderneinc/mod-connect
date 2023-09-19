@@ -67,6 +67,8 @@ dependencies {
 
     implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+
     // Resolve warning: unknown enum constant When.MAYBE
     compileOnly("com.google.code.findbugs:jsr305:latest.release")
     compileOnly("org.projectlombok:lombok:latest.release")
