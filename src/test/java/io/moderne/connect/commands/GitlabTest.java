@@ -266,7 +266,7 @@ public class GitlabTest {
             assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);
             assertThat(build.getScript()).containsExactlyElementsOf(scriptCommands);
             assertThat(build.getArtifacts().getWhen()).isEqualTo(GitLabYaml.Artifacts.When.ON_FAILURE);
-            assertThat(build.getArtifacts().getPaths()).containsExactly(".moderne/build/*/build.log");
+            assertThat(build.getArtifacts().getPaths()).containsExactly("$REPO_PATH/.moderne/build/*/build.log");
         }
     }
 }

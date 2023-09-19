@@ -223,13 +223,17 @@ public class GitLab implements Callable<Integer> {
     String platform;
 
     @CommandLine.Option(names = "--dockerImageBuildJob",
-            description = "The full name of the docker image to run the build jobs on.\n\n" +
+            description = "The full name of the docker image to run the build jobs on.\n" +
+                          "This image requires both git and a JDK to be present.\n" +
+                          "\n" +
                           "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
             defaultValue = "eclipse-temurin:17-jdk-jammy")
     String dockerImageBuildJob;
 
     @CommandLine.Option(names = "--dockerImageDownloadJob",
-            description = "The full name of the docker image to run the download job on.\n\n" +
+            description = "The full name of the docker image to run the download job on.\n" +
+                          "This image should be based on unix and requires curl to be present.\n" +
+                          "\n" +
                           "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
             defaultValue = "ruby:latest")
     String dockerImageDownloadJob;
@@ -423,7 +427,7 @@ public class GitLab implements Callable<Integer> {
                 .command(createPublishCommand())
                 .artifacts(GitLabYaml.Artifacts.builder()
                         .when(GitLabYaml.Artifacts.When.ON_FAILURE)
-                        .path(".moderne/build/*/build.log")
+                        .path("$REPO_PATH/.moderne/build/*/build.log")
                         .build())
                 .build();
     }
