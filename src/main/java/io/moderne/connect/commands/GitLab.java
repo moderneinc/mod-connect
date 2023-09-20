@@ -21,9 +21,7 @@ import picocli.CommandLine;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "gitlab",
@@ -219,6 +217,12 @@ public class GitLab implements Callable<Integer> {
     String mirrorUrl;
 
     @CommandLine.Option(
+            names = "--jobTag",
+            description = "If specified, GitLab jobs will be tagged with this value for runners to pick up.\n",
+            defaultValue = "")
+    String jobTag;
+
+    @CommandLine.Option(
             names = "--prefix",
             description = "If specified, GitLab jobs will only be created for repositories that start with this prefix.\n",
             defaultValue = "")
@@ -397,8 +401,11 @@ public class GitLab implements Callable<Integer> {
 
 
         String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0";
-        return GitLabYaml.Job.builder()
-                .stage(GitLabYaml.Stage.DOWNLOAD)
+        GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder();
+        if (StringUtils.isNotBlank(jobTag)) {
+            builder.tags(Collections.singletonList(jobTag));
+        }
+        return builder.stage(GitLabYaml.Stage.DOWNLOAD)
                 .cache(GitLabYaml.Cache.builder()
                         .key(createCliCacheKey())
                         .path("mod")
@@ -425,6 +432,9 @@ public class GitLab implements Callable<Integer> {
                 .beforeCommand(String.format("git clone --single-branch --branch %s $REPO_URL $REPO_PATH", branch))
                 .beforeCommand("echo '127.0.0.1  host.docker.internal' >> /etc/hosts"); // required for org.openrewrite.polyglot.RemoteProgressBarReceiver to work inside gitlab docker container
 
+        if (StringUtils.isNotBlank(jobTag)) {
+            builder.tags(Collections.singletonList(jobTag));
+        }
         String tenantCommand = createConfigTenantCommand();
         if (StringUtils.isNotBlank(tenantCommand)) {
             builder.command(tenantCommand);

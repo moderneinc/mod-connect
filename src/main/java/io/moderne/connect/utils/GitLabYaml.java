@@ -85,6 +85,7 @@ public class GitLabYaml {
         String image;
         Cache cache;
         Stage stage;
+        List<String> tags;
 
         @Singular
         Map<String, Object> variables;
