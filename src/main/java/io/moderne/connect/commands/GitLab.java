@@ -142,6 +142,22 @@ public class GitLab implements Callable<Integer> {
                           "@|bold Default|@: ${DEFAULT-VALUE}\n")
     String defaultBranch;
 
+    @CommandLine.Option(
+            names = "--repositoryAccessUserSecretName",
+            description = "The name of the secret containing the username that has access to the repositories in the CSV. " +
+                          "This can be a personal username or group name.\n" +
+                          "The minimum required grant is @|bold read_repository|@.\n" +
+                          "If no token is specified, the $CI_JOB_TOKEN is used.\n§")
+    String repositoryAccessUserSecretName;
+
+    @CommandLine.Option(
+            names = "--repositoryAccessTokenSecretName",
+            description = "The name of the secret containing the token that has access to the repositories in the CSV. " +
+                          "This can be a personal or group access token.\n" +
+                          "The minimum required grant is @|bold read_repository|@.\n" +
+                          "If no token is specified, the $CI_JOB_TOKEN is used.\n§")
+    String repositoryAccessTokenSecretName;
+
     @CommandLine.Option(names = "--downloadCLI",
             defaultValue = "true",
             description = "Specifies whether or not the Moderne CLI should be downloaded at the beginning of each run." +
@@ -396,18 +412,19 @@ public class GitLab implements Callable<Integer> {
 
     GitLabYaml.Job createBuildLstJob(String repoPath, String branch, String activeStyle, String additionalBuildArgs) {
         GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder();
-        if ("eclipse-temurin:17-jdk-jammy".equals(dockerImageBuildJob)) {
+        if (StringUtils.startsWith(dockerImageBuildJob, "eclipse-temurin")) {
             builder.beforeCommand("git --version || apt-get -qq update && apt-get -qq install -y git"); // todo use a base image with git installed
         }
+
+        String user = StringUtils.isBlank(repositoryAccessUserSecretName) ? "gitlab-ci-token" : variable(repositoryAccessUserSecretName);
+        String token = StringUtils.isBlank(repositoryAccessTokenSecretName) ? variable("CI_JOB_TOKEN") : variable(repositoryAccessTokenSecretName);
+
         builder.image(dockerImageBuildJob)
                 .stage(GitLabYaml.Stage.BUILD_LST)
-                .cache(GitLabYaml.Cache.builder()
-                        .key(createCliCacheKey())
-                        .path("mod")
-                        .policy(GitLabYaml.Cache.Policy.PULL).build())
                 .variable("REPO_PATH", repoPath)
-                .beforeCommand("BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`")
-                .beforeCommand("REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"")
+                .beforeCommand(String.format("REPO_ACCESS_USER=%s", user))
+                .beforeCommand(String.format("REPO_ACCESS_TOKEN=%s", token))
+                .beforeCommand("REPO_URL=$(echo \"$CI_REPOSITORY_URL\" | sed -E \"s|^(https?://)([^/]+@)?([^/]+)(/.+)?/([^/]+)/([^/]+)\\.git|\\1$REPO_ACCESS_USER:$REPO_ACCESS_TOKEN@\\3\\4/$REPO_PATH.git|\")")
                 .beforeCommand("rm -fr $REPO_PATH")
                 .beforeCommand(String.format("git clone --single-branch --branch %s $REPO_URL $REPO_PATH", branch))
                 .beforeCommand("echo '127.0.0.1  host.docker.internal' >> /etc/hosts"); // required for org.openrewrite.polyglot.RemoteProgressBarReceiver to work inside gitlab docker container
@@ -419,6 +436,12 @@ public class GitLab implements Callable<Integer> {
         String artifactCommand = createConfigArtifactsCommand();
         if (StringUtils.isNotBlank(artifactCommand)) {
             builder.command(artifactCommand);
+        }
+        if (downloadCLI) { // todo test
+            builder.cache(GitLabYaml.Cache.builder()
+                    .key(createCliCacheKey())
+                    .path("mod")
+                    .policy(GitLabYaml.Cache.Policy.PULL).build());
         }
         return builder
                 .command(createBuildCommand(activeStyle, additionalBuildArgs))
