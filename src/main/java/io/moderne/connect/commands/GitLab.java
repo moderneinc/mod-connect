@@ -147,7 +147,7 @@ public class GitLab implements Callable<Integer> {
             description = "The name of the secret containing the username that has access to the repositories in the CSV. " +
                           "This can be a personal username or group name.\n" +
                           "The minimum required grant is @|bold read_repository|@.\n" +
-                          "If no token is specified, the $CI_JOB_TOKEN is used.\n§")
+                          "If no token is specified, the $CI_JOB_TOKEN is used.\n")
     String repositoryAccessUserSecretName;
 
     @CommandLine.Option(
@@ -155,7 +155,7 @@ public class GitLab implements Callable<Integer> {
             description = "The name of the secret containing the token that has access to the repositories in the CSV. " +
                           "This can be a personal or group access token.\n" +
                           "The minimum required grant is @|bold read_repository|@.\n" +
-                          "If no token is specified, the $CI_JOB_TOKEN is used.\n§")
+                          "If no token is specified, the $CI_JOB_TOKEN is used.\n")
     String repositoryAccessTokenSecretName;
 
     @CommandLine.Option(names = "--downloadCLI",
