@@ -241,7 +241,7 @@ public class GitLab implements Callable<Integer> {
                           "This image requires both git and a JDK to be present.\n" +
                           "\n" +
                           "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
-            defaultValue = "eclipse-temurin:17-jdk-jammy")
+            defaultValue = "registry.gitlab.com/moderneinc/moderne-gitlab-ingest:latest")
     String dockerImageBuildJob;
 
     @CommandLine.Option(names = "--dockerImageDownloadJob",
@@ -412,10 +412,6 @@ public class GitLab implements Callable<Integer> {
 
     GitLabYaml.Job createBuildLstJob(String repoPath, String branch, String activeStyle, String additionalBuildArgs) {
         GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder();
-        if (StringUtils.startsWith(dockerImageBuildJob, "eclipse-temurin")) {
-            builder.beforeCommand("git --version || apt-get -qq update && apt-get -qq install -y git"); // todo use a base image with git installed
-        }
-
         String user = StringUtils.isBlank(repositoryAccessUserSecretName) ? "gitlab-ci-token" : variable(repositoryAccessUserSecretName);
         String token = StringUtils.isBlank(repositoryAccessTokenSecretName) ? variable("CI_JOB_TOKEN") : variable(repositoryAccessTokenSecretName);
 
