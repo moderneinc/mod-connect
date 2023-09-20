@@ -142,6 +142,14 @@ class GitlabTest {
         }
 
         @Test
+        void withoutDownload() {
+            gitlab.downloadCLI = false;
+            assertBuildSteps(
+                    "mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "mod publish $REPO_PATH");
+        }
+
+        @Test
         void windows() {
             gitlab.platform = "windows";
             gitlab.publishUrl = "https://my.artifactory/moderne-ingest";
@@ -279,9 +287,13 @@ class GitlabTest {
         void assertBuildSteps(List<String> beforeScriptCommands, List<String> scriptCommands) {
             GitLabYaml.Job build = gitlab.createBuildLstJob("org/repo-path", "main", "some-style", "--magic");
             assertThat(build.getStage()).isEqualTo(GitLabYaml.Stage.BUILD_LST);
-            assertThat(build.getCache().getPolicy()).isEqualTo(GitLabYaml.Cache.Policy.PULL);
-            assertThat(build.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
-            assertThat(build.getCache().getPaths()).containsExactly("mod");
+            if (gitlab.downloadCLI) {
+                assertThat(build.getCache().getPolicy()).isEqualTo(GitLabYaml.Cache.Policy.PULL);
+                assertThat(build.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
+                assertThat(build.getCache().getPaths()).containsExactly("mod");
+            } else {
+                assertThat(build.getCache()).isNull();
+            }
             assertThat(build.getVariables())
                     .containsEntry("REPO_PATH", "org/repo-path");
             assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);

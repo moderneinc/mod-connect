@@ -437,7 +437,7 @@ public class GitLab implements Callable<Integer> {
         if (StringUtils.isNotBlank(artifactCommand)) {
             builder.command(artifactCommand);
         }
-        if (downloadCLI) { // todo test
+        if (downloadCLI) {
             builder.cache(GitLabYaml.Cache.builder()
                     .key(createCliCacheKey())
                     .path("mod")
