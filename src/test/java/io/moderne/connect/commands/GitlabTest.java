@@ -142,6 +142,14 @@ class GitlabTest {
         }
 
         @Test
+        void withoutDownload() {
+            gitlab.downloadCLI = false;
+            assertBuildSteps(
+                    "mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                    "mod publish $REPO_PATH");
+        }
+
+        @Test
         void windows() {
             gitlab.platform = "windows";
             gitlab.publishUrl = "https://my.artifactory/moderne-ingest";
@@ -228,27 +236,48 @@ class GitlabTest {
 
         @Test
         void installGitOnDefaultImage() {
-            gitlab.gradlePluginVersion = "5.0.2";
             gitlab.dockerImageBuildJob = "eclipse-temurin:17-jdk-jammy";
             //language=bash
             assertBuildSteps(List.of(
                             "git --version || apt-get -qq update && apt-get -qq install -y git",
-                            "BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
-                            "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
+                            "REPO_ACCESS_USER=gitlab-ci-token",
+                            "REPO_ACCESS_TOKEN=$CI_JOB_TOKEN",
+                            "REPO_URL=$(echo \"$CI_REPOSITORY_URL\" | sed -E \"s|^(https?://)([^/]+@)?([^/]+)(/.+)?/([^/]+)/([^/]+)\\.git|\\1$REPO_ACCESS_USER:$REPO_ACCESS_TOKEN@\\3\\4/$REPO_PATH.git|\")",
                             "rm -fr $REPO_PATH",
                             "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
                             "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
                     )
                     , List.of(
-                            "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\" --gradle-plugin-version 5.0.2",
+                            "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
+                            "./mod publish $REPO_PATH"
+                    ));
+        }
+
+        @Test
+        void useProvidedGitLabCredentials() {
+            gitlab.repositoryAccessUserSecretName = "USER_SECRET";
+            gitlab.repositoryAccessTokenSecretName = "TOKEN_SECRET";
+            //language=bash
+            assertBuildSteps(List.of(
+                            "REPO_ACCESS_USER=$USER_SECRET",
+                            "REPO_ACCESS_TOKEN=$TOKEN_SECRET",
+                            "REPO_URL=$(echo \"$CI_REPOSITORY_URL\" | sed -E \"s|^(https?://)([^/]+@)?([^/]+)(/.+)?/([^/]+)/([^/]+)\\.git|\\1$REPO_ACCESS_USER:$REPO_ACCESS_TOKEN@\\3\\4/$REPO_PATH.git|\")",
+                            "rm -fr $REPO_PATH",
+                            "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
+                            "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
+                    )
+                    , List.of(
+                            "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
                             "./mod publish $REPO_PATH"
                     ));
         }
 
         void assertBuildSteps(@Language("bash") String... scriptCommands) {
+            //language=bash
             assertBuildSteps(List.of(
-                    "BASE_URL=`echo $CI_REPOSITORY_URL | sed \"s;\\/*$CI_PROJECT_PATH.*;;\"`",
-                    "REPO_URL=\"$BASE_URL/$GITLAB_HOST/$REPO_PATH.git\"",
+                    "REPO_ACCESS_USER=gitlab-ci-token",
+                    "REPO_ACCESS_TOKEN=$CI_JOB_TOKEN",
+                    "REPO_URL=$(echo \"$CI_REPOSITORY_URL\" | sed -E \"s|^(https?://)([^/]+@)?([^/]+)(/.+)?/([^/]+)/([^/]+)\\.git|\\1$REPO_ACCESS_USER:$REPO_ACCESS_TOKEN@\\3\\4/$REPO_PATH.git|\")",
                     "rm -fr $REPO_PATH",
                     "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
                     "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
@@ -258,9 +287,13 @@ class GitlabTest {
         void assertBuildSteps(List<String> beforeScriptCommands, List<String> scriptCommands) {
             GitLabYaml.Job build = gitlab.createBuildLstJob("org/repo-path", "main", "some-style", "--magic");
             assertThat(build.getStage()).isEqualTo(GitLabYaml.Stage.BUILD_LST);
-            assertThat(build.getCache().getPolicy()).isEqualTo(GitLabYaml.Cache.Policy.PULL);
-            assertThat(build.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
-            assertThat(build.getCache().getPaths()).containsExactly("mod");
+            if (gitlab.downloadCLI) {
+                assertThat(build.getCache().getPolicy()).isEqualTo(GitLabYaml.Cache.Policy.PULL);
+                assertThat(build.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
+                assertThat(build.getCache().getPaths()).containsExactly("mod");
+            } else {
+                assertThat(build.getCache()).isNull();
+            }
             assertThat(build.getVariables())
                     .containsEntry("REPO_PATH", "org/repo-path");
             assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);
