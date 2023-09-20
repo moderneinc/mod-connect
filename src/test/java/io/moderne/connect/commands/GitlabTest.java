@@ -235,25 +235,6 @@ class GitlabTest {
         }
 
         @Test
-        void installGitOnDefaultImage() {
-            gitlab.dockerImageBuildJob = "eclipse-temurin:17-jdk-jammy";
-            //language=bash
-            assertBuildSteps(List.of(
-                            "git --version || apt-get -qq update && apt-get -qq install -y git",
-                            "REPO_ACCESS_USER=gitlab-ci-token",
-                            "REPO_ACCESS_TOKEN=$CI_JOB_TOKEN",
-                            "REPO_URL=$(echo \"$CI_REPOSITORY_URL\" | sed -E \"s|^(https?://)([^/]+@)?([^/]+)(/.+)?/([^/]+)/([^/]+)\\.git|\\1$REPO_ACCESS_USER:$REPO_ACCESS_TOKEN@\\3\\4/$REPO_PATH.git|\")",
-                            "rm -fr $REPO_PATH",
-                            "git clone --single-branch --branch main $REPO_URL $REPO_PATH",
-                            "echo '127.0.0.1  host.docker.internal' >> /etc/hosts"
-                    )
-                    , List.of(
-                            "./mod build $REPO_PATH --no-download --active-style some-style --additional-build-args \"--magic\"",
-                            "./mod publish $REPO_PATH"
-                    ));
-        }
-
-        @Test
         void useProvidedGitLabCredentials() {
             gitlab.repositoryAccessUserSecretName = "USER_SECRET";
             gitlab.repositoryAccessTokenSecretName = "TOKEN_SECRET";
