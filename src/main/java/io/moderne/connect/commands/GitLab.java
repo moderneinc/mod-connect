@@ -519,7 +519,7 @@ public class GitLab implements Callable<Integer> {
     private String modCommand(String args) {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
+        if (downloadCLI) {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
         String executable = isWindowsPlatform ? "mod.exe" : "mod";
