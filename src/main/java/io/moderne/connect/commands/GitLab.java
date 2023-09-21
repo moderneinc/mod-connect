@@ -121,7 +121,7 @@ public class GitLab implements Callable<Integer> {
 
     @CommandLine.Option(
             names = "--cliVersion",
-            defaultValue = "v0.4.4",
+            defaultValue = "v0.5.5",
             description = "The version of the Moderne CLI that should be used when running GitLab jobs.\n")
     String cliVersion;
 
@@ -157,7 +157,7 @@ public class GitLab implements Callable<Integer> {
     String repositoryAccessTokenSecretName;
 
     @CommandLine.Option(names = "--downloadCLI",
-            defaultValue = "true",
+            defaultValue = "false",
             description = "Specifies whether or not the Moderne CLI should be downloaded at the beginning of each run." +
                           "Should be set to true when the base image does not include the CLI\n" +
                           "@|bold Default|@: ${DEFAULT-VALUE}\n")
@@ -303,7 +303,6 @@ public class GitLab implements Callable<Integer> {
         try {
             final GitLabYaml.Pipeline pipeline = createPipeline();
             if (pipeline == null) return 1;
-
 
             File pipelineFile = new File("moderne-pipeline.yml");
             if (!pipelineFile.exists() && !pipelineFile.createNewFile()) {
