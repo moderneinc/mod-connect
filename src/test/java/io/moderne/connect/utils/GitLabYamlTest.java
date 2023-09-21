@@ -32,6 +32,7 @@ class GitLabYamlTest {
                         .policy(GitLabYaml.Cache.Policy.PUSH_AND_PULL)
                         .build())
                 .stage(GitLabYaml.Stage.DOWNLOAD)
+                .tags(List.of("docker"))
                 .variables(Map.of("GITLAB_HOST", "gitlab.com"))
                 .command("echo \"download CLI if not exists\"")
                 .build();
@@ -71,6 +72,8 @@ class GitLabYamlTest {
                     - mod
                     policy: pull-push
                   stage: download
+                  tags:
+                  - docker
                   variables:
                     GITLAB_HOST: gitlab.com
                   before_script: []
