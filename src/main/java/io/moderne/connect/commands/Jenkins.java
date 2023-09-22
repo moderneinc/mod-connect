@@ -886,7 +886,8 @@ public class Jenkins implements Callable<Integer> {
             }
             String executable = parts[0];
             String args = Arrays.stream(Arrays.copyOfRange(parts, 1, parts.length))
-                    .collect(Collectors.joining("</argument><argument>", "<argument>", "</argument>"));
+                    .map(arg -> String.format("<argument>%s</argument>", arg))
+                    .collect(Collectors.joining("\n              "));
             builder.append(Templates.FREESTYLE_MAVEN_DEFINITION.format(
                     executable,
                     args,
