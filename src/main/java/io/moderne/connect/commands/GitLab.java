@@ -129,7 +129,7 @@ public class GitLab implements Callable<Integer> {
             names = "--commandSuffix",
             defaultValue = "",
             description = "The suffix that should be appended to the Moderne CLI command when running GitLab jobs.\n\n" +
-                          "@|bold Example|@: --Xmx 4g\n")
+                          "@|bold Example|@: --dry-run\n")
     String commandSuffix;
 
     @CommandLine.Option(

@@ -161,7 +161,7 @@ public class Jenkins implements Callable<Integer> {
 
     @CommandLine.Option(names = "--commandSuffix", defaultValue = "",
             description = "The suffix that should be appended to the Moderne CLI command when running Jenkins Jobs.\n\n" +
-                          "@|bold Example|@: --Xmx 4g\n")
+                          "@|bold Example|@: --dry-run\n")
     String commandSuffix;
 
     @CommandLine.Option(names = "--defaultBranch", defaultValue = "main",
