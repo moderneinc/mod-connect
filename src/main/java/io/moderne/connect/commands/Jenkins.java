@@ -155,7 +155,7 @@ public class Jenkins implements Callable<Integer> {
             defaultValue = "any")
     String agent;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v0.4.14",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v1.0.3",
             description = "The version of the Moderne CLI that should be used when running Jenkins Jobs.\n")
     String cliVersion;
 
@@ -470,25 +470,7 @@ public class Jenkins implements Callable<Integer> {
                 }
 
                 // Create the Jenkins job
-                String job;
-                switch (jobType) {
-                    case FREESTYLE:
-                        String scm = createFreestyleScm(plugins, gitURL, branch);
-                        String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
-                        String credentials = createFreestyleCredentials(plugins);
-                        String configFiles = createFreestyleConfigFiles(plugins);
-                        job = createFreestlyeJob(plugins, scm, steps, credentials, configFiles);
-                        break;
-                    case PIPELINE:
-                        String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
-                        String stageDownload = createStageDownload();
-                        String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
-                        String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
-                        job = createFlowDefinition(plugins, pipeline);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
-                }
+                String job = createJob(plugins, branch, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL);
                 responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
                 lineNumber++;
             }
@@ -514,6 +496,25 @@ public class Jenkins implements Callable<Integer> {
                 System.err.println("Please, use --verbose for more details.");
             }
             return 1;
+        }
+    }
+
+    String createJob(Map<String, String> plugins, String branch, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, String gitURL) {
+        switch (jobType) {
+            case FREESTYLE:
+                String scm = createFreestyleScm(plugins, gitURL, branch);
+                String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
+                String credentials = createFreestyleCredentials(plugins);
+                String configFiles = createFreestyleConfigFiles(plugins);
+                return createFreestlyeJob(plugins, scm, steps, credentials, configFiles);
+            case PIPELINE:
+                String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
+                String stageDownload = createStageDownload();
+                String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
+                String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
+                return createFlowDefinition(plugins, pipeline);
+            default:
+                throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
         }
     }
 

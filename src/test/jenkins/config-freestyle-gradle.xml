@@ -42,7 +42,7 @@
     <concurrentBuild>false</concurrentBuild>
     <builders>
         <hudson.tasks.Shell>
-            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v0.4.14/moderne-cli-linux-v0.4.14 --fail -o mod;
+            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v1.0.3/moderne-cli-linux-v1.0.3 --fail -o mod;
                 chmod 755 mod;</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
