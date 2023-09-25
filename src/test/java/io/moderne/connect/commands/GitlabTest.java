@@ -37,7 +37,7 @@ class GitlabTest {
     void setup() {
         gitlab.downloadCLI = true;
         gitlab.platform = "linux";
-        gitlab.cliVersion = "v0.4.4";
+        gitlab.cliVersion = "v1.0.3";
     }
 
     @Nested
@@ -79,10 +79,10 @@ class GitlabTest {
         void download() {
             gitlab.downloadCLI = true;
             gitlab.platform = "macos";
-            gitlab.cliVersion = "v0.5.0";
+            gitlab.cliVersion = "v1.0.3";
 
             assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0",
-                    "curl --fail --location --output mod --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v0.5.0/moderne-cli-macos-v0.5.0'",
+                    "curl --fail --location --output mod --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v1.0.3/moderne-cli-macos-v1.0.3'",
                     "chmod 755 mod"
             );
         }
