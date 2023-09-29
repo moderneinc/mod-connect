@@ -256,6 +256,13 @@ public class GitLab implements Callable<Integer> {
             defaultValue = "ruby:latest")
     String dockerImageDownloadJob;
 
+    @CommandLine.Option(names = "--buildJobRetries",
+            description = "Retries to attempt for the build job. Options are: 0, 1 or 2.\n" +
+                          "\n" +
+                          "@|bold Default|@: ${DEFAULT-VALUE}\n",
+            defaultValue = "0")
+    int buildJobRetries;
+
     @CommandLine.Option(
             names = "--verbose",
             defaultValue = "false",
@@ -422,6 +429,7 @@ public class GitLab implements Callable<Integer> {
         String token = StringUtils.isBlank(repositoryAccessTokenSecretName) ? variable("CI_JOB_TOKEN") : variable(repositoryAccessTokenSecretName);
 
         builder.image(dockerImageBuildJob)
+                .retry(buildJobRetries)
                 .stage(GitLabYaml.Stage.BUILD_LST)
                 .variable("REPO_PATH", repoPath)
                 .beforeCommand(String.format("REPO_ACCESS_USER=%s", user))

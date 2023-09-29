@@ -44,6 +44,7 @@ class GitLabYamlTest {
                         .policy(GitLabYaml.Cache.Policy.PULL)
                         .build())
                 .stage(GitLabYaml.Stage.BUILD_LST)
+                .retry(2)
                 .variables(Map.of("GITLAB_HOST", "gitlab.com"))
                 .command("echo \"Building LST\"")
                 .image("ruby:latest")
@@ -79,6 +80,7 @@ class GitLabYamlTest {
                   before_script: []
                   script:
                   - echo "download CLI if not exists"
+                  retry: 0
                 build-a:
                   image: ruby:latest
                   cache:
@@ -93,6 +95,7 @@ class GitLabYamlTest {
                   before_script: []
                   script:
                   - echo "Building LST"
+                  retry: 2
                 build-b:
                   image: ruby:latest
                   cache:
@@ -107,6 +110,7 @@ class GitLabYamlTest {
                   before_script: []
                   script:
                   - echo "Building LST"
+                  retry: 2
                 """;
         assertThat(yaml).isEqualTo(expected);
     }

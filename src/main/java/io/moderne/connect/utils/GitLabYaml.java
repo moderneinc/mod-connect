@@ -97,6 +97,7 @@ public class GitLabYaml {
         List<String> script;
 
         Artifacts artifacts;
+        int retry;
     }
 
     @Value
