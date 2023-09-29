@@ -280,6 +280,7 @@ class GitlabTest {
             assertThat(build.getBeforeScript()).containsExactlyElementsOf(beforeScriptCommands);
             assertThat(build.getScript()).containsExactlyElementsOf(scriptCommands);
             assertThat(build.getArtifacts().getWhen()).isEqualTo(GitLabYaml.Artifacts.When.ALWAYS);
+            assertThat(build.getRetry()).isEqualTo(gitlab.buildJobRetries);
             assertThat(build.getArtifacts().getPaths()).containsExactly("$REPO_PATH/.moderne/build/*/build.log");
         }
     }
