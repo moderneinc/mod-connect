@@ -276,6 +276,11 @@ public class Jenkins implements Callable<Integer> {
                           "@|bold Default|@: ${DEFAULT-VALUE}\n")
     JobType jobType;
 
+    @CommandLine.Option(names = "--workspaceCleanup", defaultValue = "false",
+            description = "If enabled, use the WsCleanup plugin to clean the workspace after finishing the job.\n" +
+                          "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
+    boolean workspaceCleanup;
+
     @SuppressWarnings("unused")
     static class UserSecret {
         @CommandLine.Option(names = "--apiToken", description = "The Jenkins apiToken that will be used when " +
@@ -328,7 +333,7 @@ public class Jenkins implements Callable<Integer> {
     private static final String CREDENTIALS_PLUGIN = "credentials-binding";
     private static final String CONFIG_FILE_PLUGIN = "config-file-provider";
     private static final Set<String> REQUIRED_PLUGINS = Stream.of(
-            CLOUDBEES_FOLDER_PLUGIN, GIT_PLUGIN, CLEAN_UP_PLUGIN, CREDENTIALS_PLUGIN
+            CLOUDBEES_FOLDER_PLUGIN, GIT_PLUGIN, CREDENTIALS_PLUGIN
     ).collect(Collectors.toSet());
     private static final Set<String> FREESTYLE_PLUGINS = Stream.of(
             GRADLE_PLUGIN
@@ -353,6 +358,7 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION("cli/jenkins/freestyle_credentials_binding_user.xml.template"),
         FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION("cli/jenkins/freestyle_credentials_binding_token.xml.template"),
         FREESTYLE_MAVEN_SETTINGS_DEFINITION("cli/jenkins/freestyle_maven_settings.xml.template"),
+        FREESTYLE_CLEANUP_DEFINITION("cli/jenkins/freestyle_cleanup.xml.template"),
 
         FLOW_DEFINITION("cli/jenkins/pipeline_flow_definition.xml.template"),
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
@@ -506,7 +512,8 @@ public class Jenkins implements Callable<Integer> {
                 String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
                 String credentials = createFreestyleCredentials(plugins);
                 String configFiles = createFreestyleConfigFiles(plugins);
-                return createFreestlyeJob(plugins, scm, steps, credentials, configFiles);
+                String cleanup = createFreestyleCleanup(plugins);
+                return createFreestlyeJob(scm, steps, cleanup, credentials, configFiles);
             case PIPELINE:
                 String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
                 String stageDownload = createStageDownload();
@@ -544,6 +551,9 @@ public class Jenkins implements Callable<Integer> {
         }
         if (jobType == JobType.FREESTYLE) {
             requiredPlugins.addAll(FREESTYLE_PLUGINS);
+        }
+        if (workspaceCleanup) {
+            requiredPlugins.add(CLEAN_UP_PLUGIN);
         }
 
         JsonNode pluginsNode = node.get("plugins");
@@ -821,7 +831,8 @@ public class Jenkins implements Callable<Integer> {
                 scheduledAt,
                 stageCheckout,
                 stageDownload,
-                stagePublish);
+                stagePublish,
+                workspaceCleanup ? "cleanWs()" : "");
     }
 
     private String createFlowDefinition(Map<String, String> plugins, String pipeline) {
@@ -932,12 +943,19 @@ public class Jenkins implements Callable<Integer> {
         return files.toString();
     }
 
-    private String createFreestlyeJob(Map<String, String> plugins, String scm, String steps, String credentials, String configFiles) {
+    private String createFreestyleCleanup(Map<String, String> plugins) {
+        if (workspaceCleanup) {
+            return Templates.FREESTYLE_CLEANUP_DEFINITION.format(plugins.get(CLEAN_UP_PLUGIN));
+        }
+        return "";
+    }
+
+    private String createFreestlyeJob(String scm, String steps, String cleanup, String credentials, String configFiles) {
         return Templates.FREESTYLE_JOB_DEFINITION.format(
                 scm,
                 scheduledAt,
                 steps,
-                plugins.get(CLEAN_UP_PLUGIN),
+                cleanup,
                 credentials,
                 configFiles
         );
