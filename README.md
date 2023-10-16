@@ -133,7 +133,7 @@ mod-connect github --fromCsv $my-csv \
 
 This command will create a GitLab pipeline job for each configured repository to build and publish LST artifacts to your artifact repository.
 
-Before you can run this command, you will need to prepare a `repos.csv` file that follows this structure:
+Before you can run this command, you will need to prepare a `repositories.csv` file that follows this structure:
 
 ```
 repoName, branch, repoStyle, repoBuildAction, repoSkip, skipReason
@@ -144,7 +144,7 @@ repoName, branch, repoStyle, repoBuildAction, repoSkip, skipReason
 | repoName            | Required | The repository that should be ingested. Follows the format of: `organization/repository` (e.g., `google/guava`).                                                      |
 | branch              | Optional | The branch of the above repository that should be ingested.                                                                                                           |
 | repoStyle           | Optional | The OpenRewrite style name to apply during ingestion.                                                                                                                 |
-| additionalBuildArgs | Optional | Additional arguments that are added to the Maven or Gradle build command.                                                                                             |
+| additionalBuildArgs | Optional | Additional arguments that are added to the `mod build` command.                                                                                                       |
 | skip                | Optional | If set to true, this repository will be skipped and not ingested.                                                                                                     |
 | skipReason          | Optional | The context for why the repo is being skipped.                                                                                                                        |
 
