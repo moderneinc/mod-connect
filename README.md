@@ -139,14 +139,14 @@ Before you can run this command, you will need to prepare a `repos.csv` file tha
 repoName, branch, repoStyle, repoBuildAction, repoSkip, skipReason
 ```
 
-| Column          | Required | Notes                                                                                                                                                                 |
-|-----------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| repoName        | Required | The repository that should be ingested. Follows the format of: `organization/repository` (e.g., `google/guava`).                                                      |
-| branch          | Optional | The branch of the above repository that should be ingested.                                                                                                           |
-| repoStyle       | Optional | The OpenRewrite style name to apply during ingestion.                                                                                                                 |
-| repoBuildAction | Optional | Additional arguments that are added to the Maven or Gradle build command.                                                                                             |
-| skip            | Optional | If set to true, this repository will be skipped and not ingested.                                                                                                     |
-| skipReason      | Optional | The context for why the repo is being skipped.                                                                                                                        |
+| Column              | Required | Notes                                                                                                                                                                 |
+|---------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| repoName            | Required | The repository that should be ingested. Follows the format of: `organization/repository` (e.g., `google/guava`).                                                      |
+| branch              | Optional | The branch of the above repository that should be ingested.                                                                                                           |
+| repoStyle           | Optional | The OpenRewrite style name to apply during ingestion.                                                                                                                 |
+| additionalBuildArgs | Optional | Additional arguments that are added to the Maven or Gradle build command.                                                                                             |
+| skip                | Optional | If set to true, this repository will be skipped and not ingested.                                                                                                     |
+| skipReason          | Optional | The context for why the repo is being skipped.                                                                                                                        |
 
 Once you've created the `repos.csv` file, you can set up the ingestion pipeline by running:
 
