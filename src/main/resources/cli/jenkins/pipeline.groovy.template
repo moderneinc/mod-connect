@@ -4,7 +4,7 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
         disableConcurrentBuilds(abortPrevious: true)
     }
-    triggers { cron('%s') }
+    %s
     stages {
 %s
 %s

@@ -1,0 +1,14 @@
+<hudson.model.ParametersDefinitionProperty>
+    <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+            <name>buildName</name>
+            <description>Used to name the build with the recipe run ID.</description>
+            <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+            <name>patchDownloadUrl</name>
+            <description>The url of the patch to download and apply for build validation.</description>
+            <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+    </parameterDefinitions>
+</hudson.model.ParametersDefinitionProperty>

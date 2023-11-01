@@ -12,6 +12,7 @@
         <artifactNumToKeep>3</artifactNumToKeep>
       </strategy>
     </jenkins.model.BuildDiscarderProperty>
+    %s
   </properties>
 %s
   <canRoam>true</canRoam>

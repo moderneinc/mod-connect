@@ -26,6 +26,8 @@ import picocli.CommandLine;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -246,6 +248,11 @@ public class Jenkins implements Callable<Integer> {
                           "@|bold Default|@: ${DEFAULT-VALUE}\n")
     boolean skipSSL;
 
+    @CommandLine.Option(names = "--createValidateJobs",
+            defaultValue = "false",
+            description = "(Incubating) If supplied validate jobs will be created for each repository.\n")
+    boolean createValidateJobs;
+
     @CommandLine.ArgGroup(multiplicity = "1")
     UserSecret userSecret;
 
@@ -372,6 +379,9 @@ public class Jenkins implements Callable<Integer> {
         STAGE_CHECKOUT("cli/jenkins/pipeline_stage_checkout.groovy.template"),
         STAGE_DOWNLOAD("cli/jenkins/pipeline_stage_download.groovy.template"),
         STAGE_PUBLISH("cli/jenkins/pipeline_stage_publish.groovy.template"),
+        STAGE_VALIDATE("cli/jenkins/pipeline_stage_validate.groovy.template"),
+        ENVIRONMENT_VALIDATE("cli/jenkins/pipeline_environment_validate.groovy.template"),
+        PARAMETERS_VALIDATE("cli/jenkins/pipeline_validate_parameters.xml.template"),
         TOOLS("cli/jenkins/pipeline_tools.groovy.template");
 
         private final String filename;
@@ -476,8 +486,19 @@ public class Jenkins implements Callable<Integer> {
                 }
 
                 // Create the Jenkins job
-                String job = createJob(plugins, branch, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL);
+                String job = createJob(plugins, branch, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL, false);
                 responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
+
+                if (createValidateJobs) {
+                    String validateFolder = "validate";
+                    if (!folderExists(validateFolder)) {
+                        createFolder(plugins, validateFolder);
+                    }
+
+                    String validateJob = createJob(plugins, branch, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL, true);
+                    responses.add(executorService.submit(() -> createJob(validateFolder, projectName, validateJob)));
+                }
+
                 lineNumber++;
             }
             // Wait for all the jobs to be created before returning
@@ -505,21 +526,22 @@ public class Jenkins implements Callable<Integer> {
         }
     }
 
-    String createJob(Map<String, String> plugins, String branch, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, String gitURL) {
+    String createJob(Map<String, String> plugins, String branch, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, String gitURL, boolean isValidateJob) {
         switch (jobType) {
             case FREESTYLE:
                 String scm = createFreestyleScm(plugins, gitURL, branch);
-                String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction);
-                String credentials = createFreestyleCredentials(plugins);
+                String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction, isValidateJob);
+                String credentials = isValidateJob ? createFreestyleValidateCredentials(plugins, gitURL) : createFreestyleCredentials(plugins);
                 String configFiles = createFreestyleConfigFiles(plugins);
                 String cleanup = createFreestyleCleanup(plugins);
-                return createFreestlyeJob(scm, steps, cleanup, credentials, configFiles);
+                String jobParameters = isValidateJob ? Templates.PARAMETERS_VALIDATE.format() : "";
+                return createFreestyleJob(jobParameters, scm, steps, cleanup, credentials, configFiles, isValidateJob);
             case PIPELINE:
                 String stageCheckout = Templates.STAGE_CHECKOUT.format(gitURL, branch, gitCredsId);
                 String stageDownload = createStageDownload();
-                String stagePublish = createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
-                String pipeline = createPipeline(stageCheckout, stageDownload, stagePublish);
-                return createFlowDefinition(plugins, pipeline);
+                String stagePublishOrValidate = isValidateJob ? createStageValidate(mavenTool, gradleTool, repoStyle, repoBuildAction) : createStagePublish(mavenTool, gradleTool, repoStyle, repoBuildAction);
+                String pipeline = createPipeline(stageCheckout, stageDownload, stagePublishOrValidate, isValidateJob ? createValidateEnvironment(gitURL) : createSchedule(scheduledAt));
+                return createFlowDefinition(plugins, pipeline, isValidateJob);
             default:
                 throw new IllegalArgumentException("Unknown jobType: " + jobType.name());
         }
@@ -691,16 +713,8 @@ public class Jenkins implements Callable<Integer> {
     }
 
     String createStagePublish(String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
-        String toolsConcatenated = Stream.of(
-                        generateSingleToolExpr("maven", defaultMaven, mavenTool),
-                        generateSingleToolExpr("gradle", defaultGradle, gradleTool))
-                .filter(str -> !StringUtils.isBlank(str))
-                .collect(Collectors.joining("\n                        "));
-        String toolsBlock = "";
-        if (!StringUtils.isBlank(toolsConcatenated)) {
-            toolsBlock = Templates.TOOLS.format(toolsConcatenated);
-        }
-        return Templates.STAGE_PUBLISH.format(toolsBlock,
+        return Templates.STAGE_PUBLISH.format(
+                createToolsBlock(mavenTool, gradleTool),
                 createConfigTenantCommand(),
                 createConfigArtifactsCommand(),
                 createConfigGradleCommand(),
@@ -708,6 +722,26 @@ public class Jenkins implements Callable<Integer> {
                 createConfigMavenSettingsCommand(),
                 createBuildCommand(repoStyle, repoBuildAction),
                 createPublishCommand());
+    }
+
+    String createStageValidate(String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
+        return Templates.STAGE_VALIDATE.format(
+                createToolsBlock(mavenTool, gradleTool),
+                createConfigTenantCommand(),
+                createBuildCommand(repoStyle, repoBuildAction));
+    }
+
+    private String createToolsBlock(String mavenTool, String gradleTool) {
+        String toolsConcatenated = Stream.of(
+                        generateSingleToolExpr("maven", defaultMaven, mavenTool),
+                        generateSingleToolExpr("gradle", defaultGradle, gradleTool))
+                .filter(str -> !StringUtils.isBlank(str))
+                .collect(Collectors.joining("\n                        "));
+        if (StringUtils.isBlank(toolsConcatenated)) {
+            return "";
+        }
+
+        return Templates.TOOLS.format(toolsConcatenated);
     }
 
     private static String generateSingleToolExpr(String toolName, String defaultTool, String repoTool) {
@@ -883,22 +917,23 @@ public class Jenkins implements Callable<Integer> {
         return String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
-    private String createPipeline(String stageCheckout, String stageDownload, String stagePublish) {
+    private String createPipeline(String stageCheckout, String stageDownload, String stagePublishOrValidate, String preStage) {
         return Templates.PIPELINE.format(
                 agent,
-                scheduledAt,
+                preStage,
                 stageCheckout,
                 stageDownload,
-                stagePublish,
+                stagePublishOrValidate,
                 workspaceCleanup ? "cleanWs()" : "");
     }
 
-    private String createFlowDefinition(Map<String, String> plugins, String pipeline) {
+    private String createFlowDefinition(Map<String, String> plugins, String pipeline, boolean isValidateJob) {
         return Templates.FLOW_DEFINITION.format(
                 plugins.get(WORKFLOW_JOB_PLUGIN),
                 plugins.get(PIPELINE_MODEL_DEFINITION_PLUGIN),
                 plugins.get(PIPELINE_MODEL_DEFINITION_PLUGIN),
-                scheduledAt,
+                isValidateJob ? "" : scheduledAt,
+                isValidateJob ? Templates.PARAMETERS_VALIDATE.format() : "",
                 plugins.get(WORKFLOW_CPS_PLUGIN),
                 pipeline);
     }
@@ -923,21 +958,28 @@ public class Jenkins implements Callable<Integer> {
         return String.format("curl %s--request GET %s --fail -o mod;\nchmod 755 mod;", credentials, downloadURL);
     }
 
-    private String createFreestyleSteps(Map<String, String> plugins, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction) {
+    private String createFreestyleSteps(Map<String, String> plugins, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, boolean isValidate) {
         StringBuilder builder = new StringBuilder();
 
+        if (isValidate) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(
+                    "curl -o patch.diff --request GET --url $patchDownloadUrl --header \"Authorization: Bearer $MODERNE_TOKEN\" --header \"x-moderne-scmtoken: $SCM_TOKEN\""
+            ));
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format("git apply patch.diff"));
+        }
         String download = createFreestyleDownload();
         if (!StringUtils.isBlank(download)) {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(download));
         }
 
         String configTenant = createConfigTenantCommand();
-        if (!StringUtils.isBlank(configTenant)) {
+        if (!isValidate && !StringUtils.isBlank(configTenant)) {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configTenant));
         }
 
-        builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
-
+        if (!isValidate) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
+        }
 
         String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
 
@@ -983,7 +1025,10 @@ public class Jenkins implements Callable<Integer> {
             ));
         }
         builder.append("\n");
-        builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createPublishCommand()));
+
+        if (!isValidate) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createPublishCommand()));
+        }
 
         return builder.toString();
     }
@@ -991,6 +1036,26 @@ public class Jenkins implements Callable<Integer> {
     private String createFreestyleCredentials(Map<String, String> plugins) {
         StringBuilder bindings = new StringBuilder();
         bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION.format(publishCredsId, "ARTIFACTS_PUBLISH_CRED_USR", "ARTIFACTS_PUBLISH_CRED_PWD"));
+        addCommonCredentialBindings(bindings);
+        return Templates.FREESTYLE_CREDENTIALS_DEFINITION.format(
+                plugins.get(CREDENTIALS_PLUGIN),
+                bindings.toString()
+        );
+    }
+
+    private String createFreestyleValidateCredentials(Map<String, String> plugins, String host) {
+        StringBuilder bindings = new StringBuilder();
+        addCommonCredentialBindings(bindings);
+        if (host != null && !StringUtils.isBlank(host)) {
+            bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION.format(createScmTokenReference(host), "SCM_TOKEN"));
+        }
+        return Templates.FREESTYLE_CREDENTIALS_DEFINITION.format(
+                plugins.get(CREDENTIALS_PLUGIN),
+                bindings.toString()
+        );
+    }
+
+    private void addCommonCredentialBindings(StringBuilder bindings) {
         if (tenant != null && !StringUtils.isBlank(tenant.moderneToken)) {
             bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION.format(tenant.moderneToken, "MODERNE_TOKEN"));
         }
@@ -998,10 +1063,6 @@ public class Jenkins implements Callable<Integer> {
             bindings.append("\n");
             bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION.format(downloadCLICreds, "CLI_DOWNLOAD_CRED_USR", "CLI_DOWNLOAD_CRED_PWD"));
         }
-        return Templates.FREESTYLE_CREDENTIALS_DEFINITION.format(
-                plugins.get(CREDENTIALS_PLUGIN),
-                bindings.toString()
-        );
     }
 
     private String createFreestyleConfigFiles(Map<String, String> plugins) {
@@ -1022,10 +1083,11 @@ public class Jenkins implements Callable<Integer> {
         return "";
     }
 
-    private String createFreestlyeJob(String scm, String steps, String cleanup, String credentials, String configFiles) {
+    private String createFreestyleJob(String params, String scm, String steps, String cleanup, String credentials, String configFiles, boolean isValidateJob) {
         return Templates.FREESTYLE_JOB_DEFINITION.format(
+                params,
                 scm,
-                scheduledAt,
+                isValidateJob ? "" : scheduledAt,
                 steps,
                 cleanup,
                 credentials,
@@ -1035,5 +1097,21 @@ public class Jenkins implements Callable<Integer> {
 
     private boolean isWindowsPlatform() {
         return PLATFORM_WINDOWS.equals(platform);
+    }
+
+    private String createSchedule(String scheduledAt) {
+        return String.format("triggers { cron('%s') }", scheduledAt);
+    }
+
+    private String createScmTokenReference(String host) {
+        try {
+            return "scmToken_" + new URL(host).getHost();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String createValidateEnvironment(String host) {
+        return Templates.ENVIRONMENT_VALIDATE.format(createScmTokenReference(host));
     }
 }
