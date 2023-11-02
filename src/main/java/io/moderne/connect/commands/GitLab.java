@@ -499,7 +499,7 @@ public class GitLab implements Callable<Integer> {
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
         String args = "build $REPO_PATH --no-download";
         if (!StringUtils.isBlank(activeStyle)) {
-            args += " --active-style " + activeStyle;
+            args += " --active-styles " + activeStyle;
         }
         if (!StringUtils.isBlank(additionalBuildArgs)) {
             args += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
