@@ -119,7 +119,7 @@ class JenkinsTest {
             jenkins.publishCredsId = "artifactCreds";
             assertPublishSteps("""
                     withCredentials([string(credentialsId: 'modToken', variable: 'MODERNE_TOKEN')]) {
-                        sh 'mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io'
+                        sh 'mod config moderne edit --token=${MODERNE_TOKEN} https://app.moderne.io'
                     }
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
                         sh 'mod config artifacts --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
@@ -146,7 +146,8 @@ class JenkinsTest {
             jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.mvnPluginVersion = "5.0.2";
             assertPublishSteps("""
-                    sh 'mod build . --no-download --maven-plugin-version 5.0.2'
+                    sh 'mod config maven plugin edit --version 5.0.2'
+                    sh 'mod build . --no-download'
                     sh 'mod publish .'
                     """);
         }
@@ -156,7 +157,8 @@ class JenkinsTest {
             jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.gradlePluginVersion = "5.0.2";
             assertPublishSteps("""
-                    sh 'mod build . --no-download --gradle-plugin-version 5.0.2'
+                    sh 'mod config gradle plugin edit --version 5.0.2'
+                    sh 'mod build . --no-download'
                     sh 'mod publish .'
                     """);
         }
@@ -181,8 +183,8 @@ class JenkinsTest {
         }
 
         void assertPublishSteps(@Language("groovy") String steps) {
-            assertThat(jenkins.createStagePublish("", "", "", ""))
-                    .isEqualToIgnoringWhitespace("stage('Publish') { steps { %s } }".formatted(steps));
+            assertThat(jenkins.createStagePublish("maven", "gradle", "", ""))
+                    .isEqualToIgnoringWhitespace("stage('Publish') { tools { maven 'maven' gradle 'gradle' } steps { %s } }".formatted(steps));
         }
     }
 }
