@@ -42,12 +42,12 @@
     <concurrentBuild>false</concurrentBuild>
     <builders>
         <hudson.tasks.Shell>
-            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v1.0.3/moderne-cli-linux-v1.0.3 --fail -o mod;
+            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v1.4.11/moderne-cli-linux-v1.4.11 --fail -o mod;
                 chmod 755 mod;</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io</command>
+            <command>./mod config moderne edit --token=${MODERNE_TOKEN} https://app.moderne.io</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
@@ -99,7 +99,7 @@ echo "ingest.gradle" >> .git/info/exclude;
         </hudson.tasks.ArtifactArchiver>
     </publishers>
     <buildWrappers>
-        <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@636.v55f1275c7b_27">
+        <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@631.v861c06d062b_4">
             <bindings>
                 <org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
                     <credentialsId>artifactCreds</credentialsId>

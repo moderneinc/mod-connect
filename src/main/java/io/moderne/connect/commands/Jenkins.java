@@ -155,7 +155,7 @@ public class Jenkins implements Callable<Integer> {
             defaultValue = "any")
     String agent;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v1.0.3",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v1.4.11",
             description = "The version of the Moderne CLI that should be used when running Jenkins Jobs.\n")
     String cliVersion;
 
@@ -703,6 +703,8 @@ public class Jenkins implements Callable<Integer> {
         return Templates.STAGE_PUBLISH.format(toolsBlock,
                 createConfigTenantCommand(),
                 createConfigArtifactsCommand(),
+                StringUtils.isBlank(gradleTool)? "" : createConfigGradleCommand(),
+                StringUtils.isBlank(mavenTool)? "" : createConfigMavenCommand(),
                 createBuildCommand(repoStyle, repoBuildAction),
                 createPublishCommand());
     }
@@ -752,7 +754,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
-        command += String.format("%s config moderne --token=%s %s",
+        command += String.format("%s config moderne edit --token=%s %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}",
                 tenant.moderneUrl
@@ -763,6 +765,54 @@ public class Jenkins implements Callable<Integer> {
         String shell = String.format("%s '%s'", isWindowsPlatform ? "powershell" : "sh", command);
         // the \n is appended since this is an optional config and will be followed by another config
         return Templates.MODERNE_CREDENTIALS.format(tenant.moderneToken, shell) + "\n";
+    }
+
+    private String createConfigGradleCommand() {
+        if (StringUtils.isBlank(gradlePluginVersion) && StringUtils.isBlank(mirrorUrl)) {
+            return "";
+        }
+
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String command = "";
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
+            command += isWindowsPlatform ? ".\\\\" : "./";
+        }
+        command += String.format("%s config gradle plugin edit",
+                isWindowsPlatform ? "mod.exe" : "mod");
+
+        if (!StringUtils.isBlank(gradlePluginVersion)) {
+            command += String.format(" --version %s", gradlePluginVersion);
+        }
+        if (!StringUtils.isBlank(mirrorUrl)) {
+            command += String.format(" --repository-url %s", mirrorUrl);
+        }
+
+        if (jobType == JobType.FREESTYLE) {
+            return command;
+        }
+        // the \n is appended since this is an optional config and will be followed by another config
+        return String.format("%s '%s'\n", isWindowsPlatform ? "powershell" : "sh", command);
+    }
+
+    private String createConfigMavenCommand() {
+        if (StringUtils.isBlank(mvnPluginVersion)) {
+            return "";
+        }
+
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String command = "";
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
+            command += isWindowsPlatform ? ".\\\\" : "./";
+        }
+        command += String.format("%s config maven plugin edit --version %s",
+                isWindowsPlatform ? "mod.exe" : "mod",
+                mvnPluginVersion);
+
+        if (jobType == JobType.FREESTYLE) {
+            return command;
+        }
+        // the \n is appended since this is an optional config and will be followed by another config
+        return String.format("%s '%s'\n", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
@@ -777,15 +827,6 @@ public class Jenkins implements Callable<Integer> {
         }
         if (!StringUtils.isBlank(additionalBuildArgs)) {
             command += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
-        }
-        if (!StringUtils.isBlank(mirrorUrl)) {
-            command += " --mirror-url " + mirrorUrl;
-        }
-        if (!StringUtils.isBlank(gradlePluginVersion)) {
-            command += " --gradle-plugin-version " + gradlePluginVersion;
-        }
-        if (!StringUtils.isBlank(mvnPluginVersion)) {
-            command += " --maven-plugin-version " + mvnPluginVersion;
         }
         if (!StringUtils.isBlank(commandSuffix)) {
             command += " " + commandSuffix;
@@ -880,9 +921,14 @@ public class Jenkins implements Callable<Integer> {
 
         builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
 
+
         String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
 
         if (!StringUtils.isBlank(gradleTool)) {
+            String configGradle = createConfigGradleCommand();
+            if (!StringUtils.isBlank(configGradle)) {
+                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configGradle));
+            }
             String buildCommandArray = Arrays.stream(buildCommand.split(" +"))
                     .collect(Collectors.joining("', '", "'", "'"));
 
@@ -892,6 +938,10 @@ public class Jenkins implements Callable<Integer> {
                     gradleTool
             ));
         } else if (!StringUtils.isBlank(mavenTool)) {
+            String configMaven = createConfigMavenCommand();
+            if (!StringUtils.isBlank(configMaven)) {
+                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMaven));
+            }
             String[] parts = buildCommand.split(" +");
             if (parts.length < 2) {
                 throw new IllegalArgumentException("Build command is not valid: " + buildCommand);
