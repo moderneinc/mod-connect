@@ -773,7 +773,7 @@ public class Jenkins implements Callable<Integer> {
         }
         String command = String.format("%s%s build . --no-download", prefix, isWindowsPlatform ? "mod.exe" : "mod");
         if (!StringUtils.isBlank(activeStyle)) {
-            command += " --active-style " + activeStyle;
+            command += " --active-styles " + activeStyle;
         }
         if (!StringUtils.isBlank(additionalBuildArgs)) {
             command += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
