@@ -104,6 +104,7 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup",
                 "--verbose");
         assertEquals(0, result);
 
@@ -125,7 +126,8 @@ class JenkinsIntegTest {
                 "--jenkinsPwd", JENKINS_TESTING_PWD,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
@@ -146,7 +148,8 @@ class JenkinsIntegTest {
                 "--apiToken", apiToken,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-java-migration_main/api/json").asString().isSuccess()));
@@ -166,7 +169,8 @@ class JenkinsIntegTest {
                 "--apiToken", apiToken,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
@@ -184,7 +188,8 @@ class JenkinsIntegTest {
                 "--apiToken", apiToken,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
@@ -203,7 +208,8 @@ class JenkinsIntegTest {
                 "--apiToken", apiToken,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
@@ -222,6 +228,7 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup",
                 "--deleteSkipped=true");
         assertEquals(0, result);
 
@@ -238,7 +245,8 @@ class JenkinsIntegTest {
                 "--apiToken", apiToken,
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
-                "--publishUrl", ARTIFACTORY_URL);
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup");
         assertEquals(0, result);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
@@ -247,6 +255,28 @@ class JenkinsIntegTest {
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
         assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-agent.xml").toPath()));
+        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
+
+    @Test
+    void submitJobsNoCleanup() throws Exception {
+        int result = cmd.execute("jenkins",
+                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
+                "--controllerUrl", jenkinsHost,
+                "--jenkinsUser", JENKINS_TESTING_USER,
+                "--apiToken", apiToken,
+                "--publishCredsId", ARTIFACT_CREDS,
+                "--gitCredsId", GIT_CREDS,
+                "--publishUrl", ARTIFACTORY_URL,
+                "--verbose");
+        assertEquals(0, result);
+
+        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
+                .asString().isSuccess()));
+
+        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
+        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-no-cleanup.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
 
@@ -268,6 +298,7 @@ class JenkinsIntegTest {
                     "--moderneUrl=" + MODERNE_URL,
                     "--moderneToken=" + MODERNE_TOKEN,
                     "--jobType", "FREESTYLE",
+                    "--workspaceCleanup",
                     "--verbose");
             assertEquals(0, result);
 
@@ -277,6 +308,35 @@ class JenkinsIntegTest {
             HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
             assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
             String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle.xml").toPath()));
+            assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+        }
+
+        @Test
+        void submitFreestyleJobsNoCleanup() throws Exception {
+            int result = cmd.execute("jenkins",
+                    "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
+                    "--controllerUrl", jenkinsHost,
+                    "--jenkinsUser", JENKINS_TESTING_USER,
+                    "--apiToken", apiToken,
+                    "--publishCredsId", ARTIFACT_CREDS,
+                    "--gitCredsId", GIT_CREDS,
+                    "--publishUrl", ARTIFACTORY_URL,
+                    "--folder", "freestyle",
+                    "--downloadCLI",
+                    "--mavenSettingsConfigFileId", MAVEN_SETTINGS,
+                    "--moderneUrl=" + MODERNE_URL,
+                    "--moderneToken=" + MODERNE_TOKEN,
+                    "--jobType", "FREESTYLE",
+                    "--verbose");
+
+            assertEquals(0, result);
+
+            await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/api/json")
+                    .asString().isSuccess()));
+
+            HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
+            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle-no-cleanup.xml").toPath()));
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
         }
 
