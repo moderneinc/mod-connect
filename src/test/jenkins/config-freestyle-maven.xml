@@ -16,7 +16,7 @@
         <configVersion>2</configVersion>
         <userRemoteConfigs>
             <hudson.plugins.git.UserRemoteConfig>
-                <url>https://github.com/openrewrite/rewrite-spring.git</url>
+                <url>https://github.com/openrewrite/rewrite-maven-plugin.git</url>
                 <credentialsId>myGitCreds</credentialsId>
             </hudson.plugins.git.UserRemoteConfig>
         </userRemoteConfigs>
@@ -55,35 +55,49 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config gradle plugin edit --version 2.2.2 --repository-url http://artifactory.moderne.internal/artifactory/moderne-cache-3</command>
+            <command>./mod config maven plugin edit --version 2.4.2</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
             <command><![CDATA[
 echo "
-  task modBuild(type:Exec) {
-    workingDir '.'
-    commandLine './mod', 'build', '.', '--no-download', '--maven-settings', '${MODERNE_MVN_SETTINGS_XML}'
-  }
-" > ingest.gradle;
-echo "ingest.gradle" >> .git/info/exclude;
+  <project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.moderne</groupId>
+    <artifactId>ingest</artifactId>
+    <version>1.0</version>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.1.0</version>
+          <configuration>
+            <executable>./mod</executable>
+            <arguments><argument>build</argument>
+              <argument>.</argument>
+              <argument>--no-download</argument>
+              <argument>--maven-settings</argument>
+              <argument>${MODERNE_MVN_SETTINGS_XML}</argument></arguments>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+  </project>
+" > ingest.xml;
+echo "ingest.xml" >> .git/info/exclude;
       ]]></command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
-        <hudson.plugins.gradle.Gradle plugin="gradle@2.8">
-            <switches/>
-            <tasks>modBuild</tasks>
-            <rootBuildScriptDir/>
-            <buildFile>ingest.gradle</buildFile>
-            <gradleName>gradle</gradleName>
-            <useWrapper>false</useWrapper>
-            <makeExecutable>false</makeExecutable>
-            <useWorkspaceAsHome>false</useWorkspaceAsHome>
-            <wrapperLocation/>
-            <passAllAsSystemProperties>false</passAllAsSystemProperties>
-            <projectProperties/>
-            <passAllAsProjectProperties>false</passAllAsProjectProperties>
-        </hudson.plugins.gradle.Gradle>
+        <hudson.tasks.Maven>
+            <mavenName>maven</mavenName>
+            <targets>exec:exec</targets>
+            <pom>ingest.xml</pom>
+            <usePrivateRepository>false</usePrivateRepository>
+            <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+            <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+            <injectBuildVariables>false</injectBuildVariables>
+        </hudson.tasks.Maven>
 
         <hudson.tasks.Shell>
             <command>./mod publish .</command>

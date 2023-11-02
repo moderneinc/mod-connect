@@ -104,6 +104,9 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup",
                 "--verbose");
         assertEquals(0, result);
@@ -299,6 +302,9 @@ class JenkinsIntegTest {
                     "--moderneToken=" + MODERNE_TOKEN,
                     "--jobType", "FREESTYLE",
                     "--workspaceCleanup",
+                    "--gradlePluginVersion", "2.2.2",
+                    "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                    "--mvnPluginVersion", "2.4.2",
                     "--verbose");
             assertEquals(0, result);
 
@@ -309,6 +315,11 @@ class JenkinsIntegTest {
             assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
             String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle.xml").toPath()));
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+
+            HttpResponse<String> responseMaven = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-maven-plugin_main/config.xml").asString();
+            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            String expectedJobMaven = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-maven.xml").toPath()));
+            assertThat(responseMaven.getBody()).isEqualToIgnoringWhitespace(expectedJobMaven);
         }
 
         @Test
