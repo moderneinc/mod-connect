@@ -155,7 +155,7 @@ class GitlabTest {
             gitlab.publishUrl = "https://my.artifactory/moderne-ingest";
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
-            assertBuildSteps(".\\\\mod.exe config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+            assertBuildSteps(".\\\\mod.exe config artifacts edit --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     ".\\\\mod.exe build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     ".\\\\mod.exe publish $REPO_PATH");
         }
@@ -167,7 +167,7 @@ class GitlabTest {
             gitlab.publishUserSecretName = "PUBLISH_USER";
             gitlab.skipSSL = true;
             assertBuildSteps(
-                    "./mod config artifacts --skipSSL --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+                    "./mod config artifacts edit --skipSSL --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     "./mod publish $REPO_PATH"
             );
@@ -183,7 +183,7 @@ class GitlabTest {
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(
                     "./mod config moderne --token=modToken https://app.moderne.io",
-                    "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+                    "./mod config artifacts edit --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     "./mod publish $REPO_PATH"
             );
@@ -198,7 +198,7 @@ class GitlabTest {
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(
                     "./mod config moderne --token=${MODERNE_TOKEN} https://app.moderne.io",
-                    "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+                    "./mod config artifacts edit --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     "./mod publish $REPO_PATH"
             );
@@ -214,7 +214,7 @@ class GitlabTest {
             gitlab.publishUserSecretName = "PUBLISH_USER";
             assertBuildSteps(
                     "./mod config moderne --token=$SECRET https://app.moderne.io",
-                    "./mod config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+                    "./mod config artifacts edit --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     "./mod publish $REPO_PATH"
             );
