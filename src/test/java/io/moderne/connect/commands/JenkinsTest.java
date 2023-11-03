@@ -87,7 +87,7 @@ class JenkinsTest {
             jenkins.publishCredsId = "artifactCreds";
             assertPublishSteps("""
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                        powershell 'mod.exe config artifacts --user=$env:ARTIFACTS_PUBLISH_CRED_USR --password=$env:ARTIFACTS_PUBLISH_CRED_PWD https://my.artifactory/moderne-ingest'
+                        powershell 'mod.exe config artifacts edit --user=$env:ARTIFACTS_PUBLISH_CRED_USR --password=$env:ARTIFACTS_PUBLISH_CRED_PWD https://my.artifactory/moderne-ingest'
                     }
                     powershell 'mod.exe build . --no-download'
                     powershell 'mod.exe publish .'
@@ -102,7 +102,7 @@ class JenkinsTest {
             jenkins.skipSSL = true;
             assertPublishSteps("""
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                        sh 'mod config artifacts --skipSSL --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
+                        sh 'mod config artifacts edit --skipSSL --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
                     }
                     sh 'mod build . --no-download'
                     sh 'mod publish .'
@@ -122,7 +122,7 @@ class JenkinsTest {
                         sh 'mod config moderne edit --token=${MODERNE_TOKEN} https://app.moderne.io'
                     }
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                        sh 'mod config artifacts --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
+                        sh 'mod config artifacts edit --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://my.artifactory/moderne-ingest'
                     }
                     sh 'mod build . --no-download'
                     sh 'mod publish .'
@@ -134,8 +134,9 @@ class JenkinsTest {
             jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.mavenSettingsConfigFileId = "maven-ingest-settings-credentials";
             assertPublishSteps("""
+                    sh 'mod config maven settings edit ${MODERNE_MVN_SETTINGS_XML}'
                     configFileProvider([configFile(fileId: 'maven-ingest-settings-credentials', variable: 'MODERNE_MVN_SETTINGS_XML')]) {
-                        sh 'mod build . --no-download --maven-settings ${MODERNE_MVN_SETTINGS_XML}'
+                        sh 'mod build . --no-download'
                     }
                     sh 'mod publish .'
                     """);
