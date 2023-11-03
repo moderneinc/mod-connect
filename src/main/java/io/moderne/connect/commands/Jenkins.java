@@ -704,7 +704,8 @@ public class Jenkins implements Callable<Integer> {
                 createConfigTenantCommand(),
                 createConfigArtifactsCommand(),
                 StringUtils.isBlank(gradleTool)? "" : createConfigGradleCommand(),
-                StringUtils.isBlank(mavenTool)? "" : createConfigMavenCommand(),
+                StringUtils.isBlank(mavenTool)? "" : createConfigMavenPluginCommand(),
+                StringUtils.isBlank(mavenTool)? "" : createConfigMavenSettingsCommand(),
                 createBuildCommand(repoStyle, repoBuildAction),
                 createPublishCommand());
     }
@@ -729,7 +730,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\\\" : "./";
         }
-        command += String.format("%s config artifacts %s--user=%s --password=%s %s",
+        command += String.format("%s config artifacts edit %s--user=%s --password=%s %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 skipSSL ? "--skipSSL " : "",
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
@@ -794,7 +795,7 @@ public class Jenkins implements Callable<Integer> {
         return String.format("%s '%s'\n", isWindowsPlatform ? "powershell" : "sh", command);
     }
 
-    private String createConfigMavenCommand() {
+    private String createConfigMavenPluginCommand() {
         if (StringUtils.isBlank(mvnPluginVersion)) {
             return "";
         }
@@ -807,6 +808,28 @@ public class Jenkins implements Callable<Integer> {
         command += String.format("%s config maven plugin edit --version %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 mvnPluginVersion);
+
+        if (jobType == JobType.FREESTYLE) {
+            return command;
+        }
+        // the \n is appended since this is an optional config and will be followed by another config
+        return String.format("%s '%s'\n", isWindowsPlatform ? "powershell" : "sh", command);
+    }
+
+    private String createConfigMavenSettingsCommand() {
+        if (StringUtils.isBlank(mavenSettingsConfigFileId)) {
+            return "";
+        }
+
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String command = "";
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
+            command += isWindowsPlatform ? ".\\\\" : "./";
+        }
+
+        command += String.format("%s config maven settings edit %s",
+                isWindowsPlatform ? "mod.exe" : "mod",
+                isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}");
 
         if (jobType == JobType.FREESTYLE) {
             return command;
@@ -830,12 +853,6 @@ public class Jenkins implements Callable<Integer> {
         }
         if (!StringUtils.isBlank(commandSuffix)) {
             command += " " + commandSuffix;
-        }
-
-
-        if (!StringUtils.isBlank(mavenSettingsConfigFileId)) {
-            String settings = isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}";
-            command += " --maven-settings " + settings;
         }
 
         switch (jobType) {
@@ -938,9 +955,13 @@ public class Jenkins implements Callable<Integer> {
                     gradleTool
             ));
         } else if (!StringUtils.isBlank(mavenTool)) {
-            String configMaven = createConfigMavenCommand();
-            if (!StringUtils.isBlank(configMaven)) {
-                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMaven));
+            String configMavenPlugin = createConfigMavenPluginCommand();
+            if (!StringUtils.isBlank(configMavenPlugin)) {
+                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenPlugin));
+            }
+            String configMavenSettings = createConfigMavenSettingsCommand();
+            if (!StringUtils.isBlank(configMavenSettings)) {
+                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenSettings));
             }
             String[] parts = buildCommand.split(" +");
             if (parts.length < 2) {

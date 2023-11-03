@@ -51,11 +51,15 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config artifacts --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest</command>
+            <command>./mod config artifacts edit --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
             <command>./mod config maven plugin edit --version 2.4.2</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>./mod config maven settings edit ${MODERNE_MVN_SETTINGS_XML}</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
@@ -76,9 +80,7 @@ echo "
             <executable>./mod</executable>
             <arguments><argument>build</argument>
               <argument>.</argument>
-              <argument>--no-download</argument>
-              <argument>--maven-settings</argument>
-              <argument>${MODERNE_MVN_SETTINGS_XML}</argument></arguments>
+              <argument>--no-download</argument></arguments>
           </configuration>
         </plugin>
       </plugins>
