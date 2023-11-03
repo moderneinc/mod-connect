@@ -155,7 +155,7 @@ class GitlabTest {
             gitlab.publishUrl = "https://my.artifactory/moderne-ingest";
             gitlab.publishPwdSecretName = "PUBLISH_SECRET";
             gitlab.publishUserSecretName = "PUBLISH_USER";
-            assertBuildSteps(".\\\\mod.exe config artifacts --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+            assertBuildSteps(".\\\\mod.exe config artifacts edit --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     ".\\\\mod.exe build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     ".\\\\mod.exe publish $REPO_PATH");
         }
