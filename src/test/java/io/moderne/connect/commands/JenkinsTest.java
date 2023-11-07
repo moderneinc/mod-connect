@@ -134,7 +134,7 @@ class JenkinsTest {
             jenkins.jobType = Jenkins.JobType.PIPELINE;
             jenkins.mavenSettingsConfigFileId = "maven-ingest-settings-credentials";
             assertPublishSteps("""
-                    sh 'mod config maven settings edit "\${MODERNE_MVN_SETTINGS_XML}"'
+                    sh 'mod config maven settings edit "\\${MODERNE_MVN_SETTINGS_XML}"'
                     configFileProvider([configFile(fileId: 'maven-ingest-settings-credentials', variable: 'MODERNE_MVN_SETTINGS_XML')]) {
                         sh 'mod build . --no-download'
                     }
