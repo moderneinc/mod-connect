@@ -49,6 +49,8 @@
                         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
                             sh 'mod config artifacts edit --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest'
                         }
+                        sh 'mod config gradle plugin edit --version 2.2.2 --repository-url http://artifactory.moderne.internal/artifactory/moderne-cache-3'
+                        sh 'mod config maven plugin edit --version 2.4.2'
                         sh 'mod build . --no-download'
                         sh 'mod publish .'
                     }

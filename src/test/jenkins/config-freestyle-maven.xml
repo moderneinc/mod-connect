@@ -55,13 +55,18 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
+            <command>./mod config gradle plugin edit --version 2.2.2 --repository-url http://artifactory.moderne.internal/artifactory/moderne-cache-3</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
             <command>./mod config maven plugin edit --version 2.4.2</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config maven settings edit ${MODERNE_MVN_SETTINGS_XML}</command>
+            <command>./mod config maven settings edit "\${MODERNE_MVN_SETTINGS_XML}"</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
+
         <hudson.tasks.Shell>
             <command><![CDATA[
 echo "

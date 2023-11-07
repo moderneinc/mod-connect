@@ -130,6 +130,9 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -173,6 +176,9 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -192,6 +198,9 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -212,6 +221,9 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -231,6 +243,9 @@ class JenkinsIntegTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup",
                 "--deleteSkipped=true");
         assertEquals(0, result);
