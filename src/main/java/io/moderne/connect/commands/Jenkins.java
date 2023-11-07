@@ -703,9 +703,9 @@ public class Jenkins implements Callable<Integer> {
         return Templates.STAGE_PUBLISH.format(toolsBlock,
                 createConfigTenantCommand(),
                 createConfigArtifactsCommand(),
-                StringUtils.isBlank(gradleTool)? "" : createConfigGradleCommand(),
-                StringUtils.isBlank(mavenTool)? "" : createConfigMavenPluginCommand(),
-                StringUtils.isBlank(mavenTool)? "" : createConfigMavenSettingsCommand(),
+                createConfigGradleCommand(),
+                createConfigMavenPluginCommand(),
+                createConfigMavenSettingsCommand(),
                 createBuildCommand(repoStyle, repoBuildAction),
                 createPublishCommand());
     }
@@ -829,7 +829,7 @@ public class Jenkins implements Callable<Integer> {
 
         command += String.format("%s config maven settings edit %s",
                 isWindowsPlatform ? "mod.exe" : "mod",
-                isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}");
+                isWindowsPlatform ? "\"\\$env:MODERNE_MVN_SETTINGS_XML\"" : "\"\\${MODERNE_MVN_SETTINGS_XML}\"");
 
         if (jobType == JobType.FREESTYLE) {
             return command;
@@ -941,11 +941,20 @@ public class Jenkins implements Callable<Integer> {
 
         String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
 
+        String configGradle = createConfigGradleCommand();
+        if (!StringUtils.isBlank(configGradle)) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configGradle));
+        }
+        String configMavenPlugin = createConfigMavenPluginCommand();
+        if (!StringUtils.isBlank(configMavenPlugin)) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenPlugin));
+        }
+        String configMavenSettings = createConfigMavenSettingsCommand();
+        if (!StringUtils.isBlank(configMavenSettings)) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenSettings));
+        }
+
         if (!StringUtils.isBlank(gradleTool)) {
-            String configGradle = createConfigGradleCommand();
-            if (!StringUtils.isBlank(configGradle)) {
-                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configGradle));
-            }
             String buildCommandArray = Arrays.stream(buildCommand.split(" +"))
                     .collect(Collectors.joining("', '", "'", "'"));
 
@@ -955,14 +964,6 @@ public class Jenkins implements Callable<Integer> {
                     gradleTool
             ));
         } else if (!StringUtils.isBlank(mavenTool)) {
-            String configMavenPlugin = createConfigMavenPluginCommand();
-            if (!StringUtils.isBlank(configMavenPlugin)) {
-                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenPlugin));
-            }
-            String configMavenSettings = createConfigMavenSettingsCommand();
-            if (!StringUtils.isBlank(configMavenSettings)) {
-                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenSettings));
-            }
             String[] parts = buildCommand.split(" +");
             if (parts.length < 2) {
                 throw new IllegalArgumentException("Build command is not valid: " + buildCommand);

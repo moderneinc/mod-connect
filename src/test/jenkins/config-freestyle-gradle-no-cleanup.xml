@@ -55,6 +55,10 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
+            <command>./mod config maven settings edit "\${MODERNE_MVN_SETTINGS_XML}"</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
             <command><![CDATA[
 echo "
   task modBuild(type:Exec) {
