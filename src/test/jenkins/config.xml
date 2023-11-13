@@ -1,15 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><flow-definition plugin="workflow-job@1308.v58d48a_763b_31">
-    <actions>
-        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@2.2121.vd87fb_6536d1e"/>
-        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@2.2121.vd87fb_6536d1e">
-            <jobProperties/>
-            <triggers>
-                <string>hudson.triggers.TimerTrigger</string>
-            </triggers>
-            <parameters/>
-            <options/>
-        </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
-    </actions>
+<?xml version="1.1" encoding="UTF-8"?><project>
+    <actions/>
     <description/>
     <keepDependencies>false</keepDependencies>
     <properties>
@@ -21,51 +11,97 @@
                 <artifactNumToKeep>3</artifactNumToKeep>
             </strategy>
         </jenkins.model.BuildDiscarderProperty>
-        <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
-            <triggers>
-                <hudson.triggers.TimerTrigger>
-                    <spec>H H * * *</spec>
-                </hudson.triggers.TimerTrigger>
-            </triggers>
-        </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+
     </properties>
-    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@3691.v28b_14c465a_b_b_">
-        <script><![CDATA[
-        pipeline {
-            agent any
-            options {
-                timeout(time: 1, unit: 'HOURS')
-                disableConcurrentBuilds(abortPrevious: true)
-            }
-            triggers { cron('H H * * *') }
-            stages {
-                stage('Checkout') {
-                    steps {
-                        git (url: 'https://github.com/openrewrite/rewrite-spring.git', branch: 'main', credentialsId: 'myGitCreds')
-                    }
-                }
-                stage('Publish') {
-                    steps {
-                        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'artifactCreds', usernameVariable: 'ARTIFACTS_PUBLISH_CRED_USR', passwordVariable: 'ARTIFACTS_PUBLISH_CRED_PWD']]) {
-                            sh 'mod config artifacts edit --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest'
-                        }
-                        sh 'mod config gradle plugin edit --version 2.2.2 --repository-url http://artifactory.moderne.internal/artifactory/moderne-cache-3'
-                        sh 'mod config maven plugin edit --version 2.4.2'
-                        sh 'mod build . --no-download'
-                        sh 'mod publish .'
-                    }
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: '.moderne/build/**/build.log'
-                    cleanWs()
-                }
-            }
-        }
-        ]]></script>
-        <sandbox>true</sandbox>
-    </definition>
-    <triggers/>
+    <scm class="hudson.plugins.git.GitSCM" plugin="git@5.1.0">
+        <configVersion>2</configVersion>
+        <userRemoteConfigs>
+            <hudson.plugins.git.UserRemoteConfig>
+                <url>https://github.com/openrewrite/rewrite-spring.git</url>
+                <credentialsId>myGitCreds</credentialsId>
+            </hudson.plugins.git.UserRemoteConfig>
+        </userRemoteConfigs>
+        <branches>
+            <hudson.plugins.git.BranchSpec>
+                <name>*/main</name>
+            </hudson.plugins.git.BranchSpec>
+        </branches>
+        <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+        <submoduleCfg class="empty-list"/>
+        <extensions/>
+    </scm>
+
+    <canRoam>true</canRoam>
     <disabled>false</disabled>
-</flow-definition>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers>
+        <hudson.triggers.TimerTrigger>
+            <spec>H H * * *</spec>
+        </hudson.triggers.TimerTrigger>
+    </triggers>
+    <concurrentBuild>false</concurrentBuild>
+    <builders>
+        <hudson.tasks.Shell>
+            <command>mod config artifacts edit --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>mod config gradle plugin edit --version 2.2.2 --repository-url http://artifactory.moderne.internal/artifactory/moderne-cache-3</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>mod config maven plugin edit --version 2.4.2</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>mod build . --no-download</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+
+        <hudson.tasks.Shell>
+            <command>mod publish .</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+
+    </builders>
+    <publishers>
+        <hudson.tasks.ArtifactArchiver>
+            <artifacts>.moderne/build/**/build.log</artifacts>
+            <allowEmptyArchive>false</allowEmptyArchive>
+            <onlyIfSuccessful>false</onlyIfSuccessful>
+            <fingerprint>false</fingerprint>
+            <defaultExcludes>true</defaultExcludes>
+            <caseSensitive>true</caseSensitive>
+            <followSymlinks>false</followSymlinks>
+        </hudson.tasks.ArtifactArchiver>
+        <hudson.plugins.ws__cleanup.WsCleanup plugin="ws-cleanup@0.45">
+            <patterns class="empty-list"/>
+            <deleteDirs>false</deleteDirs>
+            <skipWhenFailed>false</skipWhenFailed>
+            <cleanWhenSuccess>true</cleanWhenSuccess>
+            <cleanWhenUnstable>true</cleanWhenUnstable>
+            <cleanWhenFailure>true</cleanWhenFailure>
+            <cleanWhenNotBuilt>true</cleanWhenNotBuilt>
+            <cleanWhenAborted>true</cleanWhenAborted>
+            <notFailBuild>false</notFailBuild>
+            <cleanupMatrixParent>false</cleanupMatrixParent>
+            <externalDelete/>
+            <disableDeferredWipeout>false</disableDeferredWipeout>
+        </hudson.plugins.ws__cleanup.WsCleanup>
+    </publishers>
+    <buildWrappers>
+        <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@631.v861c06d062b_4">
+            <bindings>
+                <org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+                    <credentialsId>artifactCreds</credentialsId>
+                    <usernameVariable>ARTIFACTS_PUBLISH_CRED_USR</usernameVariable>
+                    <passwordVariable>ARTIFACTS_PUBLISH_CRED_PWD</passwordVariable>
+                </org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding>
+
+            </bindings>
+        </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+
+
+    </buildWrappers>
+</project>

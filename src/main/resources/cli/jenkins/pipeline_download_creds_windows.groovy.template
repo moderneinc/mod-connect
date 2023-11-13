@@ -1,7 +1,0 @@
-                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '%s', usernameVariable: 'CLI_DOWNLOAD_CRED_USR', passwordVariable: 'CLI_DOWNLOAD_CRED_PWD']]) {
-                    powershell '''
-                    $wc = New-Object System.Net.WebClient
-                    $wc.Credentials = new NetworkCredentials($env:CLI_DOWNLOAD_CRED_USR, $env:CLI_DOWNLOAD_CRED_PWD)
-                    $wc.DownloadFile("%s", "mod.exe")
-                    '''
-                }

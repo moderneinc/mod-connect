@@ -1,8 +1,0 @@
-        stage('Publish') {
-%s
-            steps {
-%s%s%s%s%s
-%s
-%s
-            }
-        }
