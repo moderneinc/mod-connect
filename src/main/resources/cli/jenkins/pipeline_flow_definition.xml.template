@@ -28,6 +28,7 @@
                 </hudson.triggers.TimerTrigger>
             </triggers>
         </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+        %s
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@%s">
         <script><![CDATA[

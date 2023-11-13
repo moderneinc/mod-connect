@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
@@ -332,10 +333,53 @@ class JenkinsIntegTest {
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
 
             HttpResponse<String> responseMaven = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-maven-plugin_main/config.xml").asString();
-            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            assertTrue(responseMaven.isSuccess(), "Failed to get job config.xml: " + responseMaven.getStatusText());
             String expectedJobMaven = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-maven.xml").toPath()));
             assertThat(responseMaven.getBody()).isEqualToIgnoringWhitespace(expectedJobMaven);
+
+            await().untilAsserted(() -> assertFalse(Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-spring_main/api/json")
+                    .asString().isSuccess()));
+
         }
+
+        @Test
+        void submitFreestyleJobsWithValidate() throws Exception {
+            int result = cmd.execute("jenkins",
+                    "--fromCsv", new File("src/test/csv/jenkins-repos.csv").getAbsolutePath(),
+                    "--controllerUrl", jenkinsHost,
+                    "--jenkinsUser", JENKINS_TESTING_USER,
+                    "--apiToken", apiToken,
+                    "--publishCredsId", ARTIFACT_CREDS,
+                    "--gitCredsId", GIT_CREDS,
+                    "--publishUrl", ARTIFACTORY_URL,
+                    "--folder", "freestyle",
+                    "--downloadCLI",
+                    "--mavenSettingsConfigFileId", MAVEN_SETTINGS,
+                    "--moderneUrl=" + MODERNE_URL,
+                    "--moderneToken=" + MODERNE_TOKEN,
+                    "--createValidateJobs",
+                    "--jobType", "FREESTYLE",
+                    "--workspaceCleanup",
+                    "--gradlePluginVersion", "2.2.2",
+                    "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                    "--mvnPluginVersion", "2.4.2",
+                    "--verbose");
+            assertEquals(0, result);
+
+            await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-spring_main/api/json")
+                    .asString().isSuccess()));
+
+            HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-spring_main/config.xml").asString();
+            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle-validate.xml").toPath()));
+            assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+
+            HttpResponse<String> responseMaven = Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-maven-plugin_main/config.xml").asString();
+            assertTrue(responseMaven.isSuccess(), "Failed to get job config.xml: " + responseMaven.getStatusText());
+            String expectedJobMaven = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-maven-validate.xml").toPath()));
+            assertThat(responseMaven.getBody()).isEqualToIgnoringWhitespace(expectedJobMaven);
+        }
+
 
         @Test
         void submitFreestyleJobsNoCleanup() throws Exception {

@@ -1,0 +1,164 @@
+<?xml version="1.1" encoding="UTF-8"?><project>
+    <actions/>
+    <description/>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <jenkins.model.BuildDiscarderProperty>
+            <strategy class="hudson.tasks.LogRotator">
+                <daysToKeep>-1</daysToKeep>
+                <numToKeep>3</numToKeep>
+                <artifactDaysToKeep>-1</artifactDaysToKeep>
+                <artifactNumToKeep>3</artifactNumToKeep>
+            </strategy>
+        </jenkins.model.BuildDiscarderProperty>
+        <hudson.model.ParametersDefinitionProperty>
+            <parameterDefinitions>
+                <hudson.model.StringParameterDefinition>
+                    <name>buildName</name>
+                    <description>Used to name the build with the recipe run ID.</description>
+                    <trim>false</trim>
+                </hudson.model.StringParameterDefinition>
+                <hudson.model.StringParameterDefinition>
+                    <name>patchDownloadUrl</name>
+                    <description>The url of the patch to download and apply for build validation.</description>
+                    <trim>false</trim>
+                </hudson.model.StringParameterDefinition>
+            </parameterDefinitions>
+        </hudson.model.ParametersDefinitionProperty>
+
+    </properties>
+    <scm class="hudson.plugins.git.GitSCM" plugin="git@5.1.0">
+        <configVersion>2</configVersion>
+        <userRemoteConfigs>
+            <hudson.plugins.git.UserRemoteConfig>
+                <url>https://github.com/openrewrite/rewrite-spring.git</url>
+                <credentialsId>myGitCreds</credentialsId>
+            </hudson.plugins.git.UserRemoteConfig>
+        </userRemoteConfigs>
+        <branches>
+            <hudson.plugins.git.BranchSpec>
+                <name>*/main</name>
+            </hudson.plugins.git.BranchSpec>
+        </branches>
+        <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+        <submoduleCfg class="empty-list"/>
+        <extensions/>
+    </scm>
+
+    <canRoam>true</canRoam>
+    <disabled>false</disabled>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers>
+        <hudson.triggers.TimerTrigger>
+            <spec/>
+        </hudson.triggers.TimerTrigger>
+    </triggers>
+    <concurrentBuild>false</concurrentBuild>
+    <builders>
+        <hudson.tasks.Shell>
+            <command>curl -o patch.diff --request GET --url $patchDownloadUrl --header "Authorization: Bearer $MODERNE_TOKEN" --header "x-moderne-scmtoken: $SCM_TOKEN"</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>git apply patch.diff</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v1.4.11/moderne-cli-linux-v1.4.11 --fail -o mod;
+                chmod 755 mod;</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>./mod config gradle plugin edit --version 2.2.2 --repository-url http://artifactory.moderne.internal/artifactory/moderne-cache-3</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>./mod config maven plugin edit --version 2.4.2</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command>./mod config maven settings edit "\${MODERNE_MVN_SETTINGS_XML}"</command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
+            <command><![CDATA[
+echo "
+  task modBuild(type:Exec) {
+    workingDir '.'
+    commandLine './mod', 'build', '.', '--no-download'
+  }
+" > ingest.gradle;
+echo "ingest.gradle" >> .git/info/exclude;
+      ]]></command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.plugins.gradle.Gradle plugin="gradle@2.8">
+            <switches/>
+            <tasks>modBuild</tasks>
+            <rootBuildScriptDir/>
+            <buildFile>ingest.gradle</buildFile>
+            <gradleName>gradle</gradleName>
+            <useWrapper>false</useWrapper>
+            <makeExecutable>false</makeExecutable>
+            <useWorkspaceAsHome>false</useWorkspaceAsHome>
+            <wrapperLocation/>
+            <passAllAsSystemProperties>false</passAllAsSystemProperties>
+            <projectProperties/>
+            <passAllAsProjectProperties>false</passAllAsProjectProperties>
+        </hudson.plugins.gradle.Gradle>
+
+
+    </builders>
+    <publishers>
+        <hudson.tasks.ArtifactArchiver>
+            <artifacts>.moderne/build/**/build.log</artifacts>
+            <allowEmptyArchive>false</allowEmptyArchive>
+            <onlyIfSuccessful>false</onlyIfSuccessful>
+            <fingerprint>false</fingerprint>
+            <defaultExcludes>true</defaultExcludes>
+            <caseSensitive>true</caseSensitive>
+            <followSymlinks>false</followSymlinks>
+        </hudson.tasks.ArtifactArchiver>
+        <hudson.plugins.ws__cleanup.WsCleanup plugin="ws-cleanup@0.45">
+            <patterns class="empty-list"/>
+            <deleteDirs>false</deleteDirs>
+            <skipWhenFailed>false</skipWhenFailed>
+            <cleanWhenSuccess>true</cleanWhenSuccess>
+            <cleanWhenUnstable>true</cleanWhenUnstable>
+            <cleanWhenFailure>true</cleanWhenFailure>
+            <cleanWhenNotBuilt>true</cleanWhenNotBuilt>
+            <cleanWhenAborted>true</cleanWhenAborted>
+            <notFailBuild>false</notFailBuild>
+            <cleanupMatrixParent>false</cleanupMatrixParent>
+            <externalDelete/>
+            <disableDeferredWipeout>false</disableDeferredWipeout>
+        </hudson.plugins.ws__cleanup.WsCleanup>
+    </publishers>
+    <buildWrappers>
+        <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@631.v861c06d062b_4">
+            <bindings>
+                <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+                    <credentialsId>modToken</credentialsId>
+                    <variable>MODERNE_TOKEN</variable>
+                </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+                <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+                    <credentialsId>scmToken_github.com</credentialsId>
+                    <variable>SCM_TOKEN</variable>
+                </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+
+            </bindings>
+        </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+
+        <org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper plugin="config-file-provider@953.v0432a_802e4d2">
+            <managedFiles>
+                <org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
+                    <fileId>maven_settings</fileId>
+                    <replaceTokens>false</replaceTokens>
+                    <variable>MODERNE_MVN_SETTINGS_XML</variable>
+                </org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
+            </managedFiles>
+        </org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper>
+
+    </buildWrappers>
+</project>

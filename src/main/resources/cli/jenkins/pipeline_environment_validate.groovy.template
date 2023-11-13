@@ -1,0 +1,4 @@
+environment {
+        MODERNE_TOKEN = credentials('modToken')
+        SCM_TOKEN = credentials('%s')
+    }
