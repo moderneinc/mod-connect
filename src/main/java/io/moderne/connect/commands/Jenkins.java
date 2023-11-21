@@ -310,7 +310,10 @@ public class Jenkins implements Callable<Integer> {
     private static final String CREDENTIALS_PLUGIN = "credentials-binding";
     private static final String CONFIG_FILE_PLUGIN = "config-file-provider";
     private static final Set<String> REQUIRED_PLUGINS = Stream.of(
-            CLOUDBEES_FOLDER_PLUGIN, GIT_PLUGIN, CREDENTIALS_PLUGIN, GRADLE_PLUGIN
+            CLOUDBEES_FOLDER_PLUGIN, GIT_PLUGIN, CREDENTIALS_PLUGIN
+    ).collect(Collectors.toSet());
+    private static final Set<String> OPTIONAL_PLUGINS = Stream.of(
+            GRADLE_PLUGIN
     ).collect(Collectors.toSet());
 
     @RequiredArgsConstructor
@@ -520,9 +523,15 @@ public class Jenkins implements Callable<Integer> {
         }
         if (!result.keySet().containsAll(requiredPlugins)) {
             throw new RuntimeException(String.format(
-                    "Jenkins requires to install the following plugins: %s",
+                    "mod-connect requires to install the following Jenkins plugins: %s",
                     requiredPlugins.stream().filter(plugin -> !result.containsKey(plugin))
                             .collect(Collectors.joining(", "))));
+        }
+        if (!result.keySet().containsAll(OPTIONAL_PLUGINS)) {
+            System.out.printf(
+                    "mod-connect recommends to install the following Jenkins plugins: %s%n",
+                    OPTIONAL_PLUGINS.stream().filter(plugin -> !result.containsKey(plugin))
+                            .collect(Collectors.joining(", ")));
         }
         return result;
     }
