@@ -516,7 +516,7 @@ public class Jenkins implements Callable<Integer> {
         for (int i = 0; i < pluginsSize; i++) {
             JsonNode pluginNode = pluginsNode.get(i);
             if (pluginNode.get("active").asBoolean(false)) {
-                if (pluginNode.has("shortName") && requiredPlugins.contains(pluginNode.get("shortName").asText())) {
+                if (pluginNode.has("shortName")) {
                     result.put(pluginNode.get("shortName").asText(), pluginNode.get("version").asText());
                 }
             }
