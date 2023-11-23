@@ -15,7 +15,7 @@
     %s
   </properties>
 %s
-  <canRoam>true</canRoam>
+%s
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>

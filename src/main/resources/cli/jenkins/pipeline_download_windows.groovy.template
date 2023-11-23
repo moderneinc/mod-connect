@@ -1,4 +1,0 @@
-                powershell '''
-                $wc = New-Object System.Net.WebClient
-                $wc.DownloadFile("%s", "mod.exe")
-                '''
