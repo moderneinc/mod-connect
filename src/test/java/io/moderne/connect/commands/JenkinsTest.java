@@ -106,6 +106,7 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
+                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup",
@@ -132,6 +133,7 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
+                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -178,6 +180,7 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
+                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -200,6 +203,7 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
+                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -223,6 +227,7 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
+                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");

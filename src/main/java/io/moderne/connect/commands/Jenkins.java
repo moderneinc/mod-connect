@@ -300,6 +300,9 @@ public class Jenkins implements Callable<Integer> {
         String moderneToken;
     }
 
+    @CommandLine.Option(names = "--gradleProperty")
+    Map<String, String> gradleProperties = Collections.emptyMap();
+
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
 
     private static final String PLATFORM_WINDOWS = "windows";
@@ -691,6 +694,19 @@ public class Jenkins implements Callable<Integer> {
         return command;
     }
 
+    private String createConfigGradleProperties() {
+        if (gradleProperties == null || gradleProperties.isEmpty()) {
+            return "";
+        }
+        StringBuilder properties = new StringBuilder();
+        properties.append("<![CDATA[\n");
+        for (Map.Entry<String, String> property: gradleProperties.entrySet()) {
+            properties.append(String.format("echo \"%s=%s\" >> gradle.properties\n", property.getKey(), property.getValue()));
+        }
+        properties.append("]]>");
+        return properties.toString();
+    }
+
     private String createConfigMavenPluginCommand() {
         if (StringUtils.isBlank(mvnPluginVersion)) {
             return "";
@@ -799,6 +815,10 @@ public class Jenkins implements Callable<Integer> {
         String configGradle = createConfigGradleCommand();
         if (!StringUtils.isBlank(configGradle)) {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configGradle));
+        }
+        String configGradleProperties = createConfigGradleProperties();
+        if (!StringUtils.isBlank(configGradleProperties)) {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configGradleProperties));
         }
         String configMavenPlugin = createConfigMavenPluginCommand();
         if (!StringUtils.isBlank(configMavenPlugin)) {
