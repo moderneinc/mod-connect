@@ -51,6 +51,14 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
+            <command><![CDATA[
+echo "property1=value1" >> gradle.properties
+echo "property2=value2" >> gradle.properties
+echo "property3=${ENV_VAR}" >> gradle.properties
+            ]]></command>
+            <configuredLocalRules/>
+        </hudson.tasks.Shell>
+        <hudson.tasks.Shell>
             <command>mod config maven plugin edit --version 2.4.2</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>

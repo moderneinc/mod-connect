@@ -106,7 +106,6 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
-                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup",
@@ -133,7 +132,6 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
-                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -180,7 +178,6 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
-                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -203,7 +200,6 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
-                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -227,7 +223,6 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--gradlePluginVersion", "2.2.2",
-                "--gradleProperty", "property=${VALUE}",
                 "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
                 "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
@@ -413,4 +408,34 @@ class JenkinsTest {
         }
 
     }
+
+    @Test
+    void submitJobsWithGradleProperties() throws Exception {
+        int result = cmd.execute("jenkins",
+                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
+                "--controllerUrl", jenkinsHost,
+                "--jenkinsUser", JENKINS_TESTING_USER,
+                "--apiToken", apiToken,
+                "--publishCredsId", ARTIFACT_CREDS,
+                "--gitCredsId", GIT_CREDS,
+                "--publishUrl", ARTIFACTORY_URL,
+                "--gradlePluginVersion", "2.2.2",
+                "--gradleProperty", "property1=value1",
+                "--gradleProperty", "property2=value2",
+                "--gradleProperty", "property3=${ENV_VAR}",
+                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
+                "--mvnPluginVersion", "2.4.2",
+                "--workspaceCleanup",
+                "--verbose");
+        assertEquals(0, result);
+
+        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
+                .asString().isSuccess()));
+
+        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
+        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-gradle-properties.xml").toPath()));
+        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
+
 }
