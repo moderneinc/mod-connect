@@ -1,0 +1,6 @@
+<org.jenkinsci.plugins.buildnamesetter.BuildNameSetter plugin="build-name-setter@2.2.0">
+    <template>${buildName}</template>
+    <descriptionTemplate/>
+    <runAtStart>true</runAtStart>
+    <runAtEnd>true</runAtEnd>
+</org.jenkinsci.plugins.buildnamesetter.BuildNameSetter>

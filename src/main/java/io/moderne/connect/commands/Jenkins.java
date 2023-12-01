@@ -330,10 +330,9 @@ public class Jenkins implements Callable<Integer> {
         FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION("cli/jenkins/freestyle_credentials_binding_token.xml.template"),
         FREESTYLE_MAVEN_SETTINGS_DEFINITION("cli/jenkins/freestyle_maven_settings.xml.template"),
         FREESTYLE_CLEANUP_DEFINITION("cli/jenkins/freestyle_cleanup.xml.template"),
-
         FOLDER_DEFINITION("cli/jenkins/jenkins_folder.xml.template"),
-
-        PARAMETERS_VALIDATE("cli/jenkins/validate_parameters.xml.template");
+        PARAMETERS_VALIDATE_DEFINITION("cli/jenkins/validate_parameters.xml.template"),
+        BUILD_NAME_SETTER_VALIDATE_DEFINITION("cli/jenkins/validate_build_name_setter.xml.template");
 
         private final String filename;
 
@@ -484,8 +483,9 @@ public class Jenkins implements Callable<Integer> {
         String credentials = isValidateJob ? createFreestyleValidateCredentials(plugins, gitURL) : createFreestyleCredentials(plugins);
         String configFiles = createFreestyleConfigFiles(plugins);
         String cleanup = createFreestyleCleanup(plugins);
-        String jobParameters = isValidateJob ? Templates.PARAMETERS_VALIDATE.format() : "";
-        return createFreestyleJob(jobParameters, scm, assignedNode, steps, cleanup, credentials, configFiles, isValidateJob);
+        String jobParameters = isValidateJob ? Templates.PARAMETERS_VALIDATE_DEFINITION.format() : "";
+        String buildNameSetter = isValidateJob ? Templates.BUILD_NAME_SETTER_VALIDATE_DEFINITION.format() : "";
+        return createFreestyleJob(jobParameters, scm, assignedNode, steps, cleanup, credentials, configFiles, buildNameSetter, isValidateJob);
     }
 
     private <T extends HttpRequest<T>> T authenticate(T request) {
@@ -957,7 +957,7 @@ public class Jenkins implements Callable<Integer> {
         return "";
     }
 
-    private String createFreestyleJob(String params, String scm, String assignedNode, String steps, String cleanup, String credentials, String configFiles, boolean isValidateJob) {
+    private String createFreestyleJob(String params, String scm, String assignedNode, String steps, String cleanup, String credentials, String configFiles, String buildNameSetter, boolean isValidateJob) {
         return Templates.FREESTYLE_JOB_DEFINITION.format(
                 params,
                 scm,
@@ -966,7 +966,8 @@ public class Jenkins implements Callable<Integer> {
                 steps,
                 cleanup,
                 credentials,
-                configFiles
+                configFiles,
+                buildNameSetter
         );
     }
 
