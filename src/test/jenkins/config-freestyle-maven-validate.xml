@@ -172,6 +172,11 @@ echo "ingest.xml" >> .git/info/exclude;
                 </org.jenkinsci.plugins.configfiles.buildwrapper.ManagedFile>
             </managedFiles>
         </org.jenkinsci.plugins.configfiles.buildwrapper.ConfigFileBuildWrapper>
-
+        <org.jenkinsci.plugins.buildnamesetter.BuildNameSetter plugin="build-name-setter@2.2.0">
+            <template>${buildName}</template>
+            <descriptionTemplate/>
+            <runAtStart>true</runAtStart>
+            <runAtEnd>true</runAtEnd>
+        </org.jenkinsci.plugins.buildnamesetter.BuildNameSetter>
     </buildWrappers>
 </project>
