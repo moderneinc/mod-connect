@@ -202,12 +202,6 @@ public class Jenkins implements Callable<Integer> {
                           "    {controllerUrl}/manage/configureTools/\n")
     String mavenSettingsConfigFileId;
 
-    @CommandLine.Option(names = "--mirrorUrl", defaultValue = "${MODERNE_MIRROR_URL}",
-            description = "For Gradle projects, this can be specified as a Maven repository cache/mirror to check " +
-                          "before any other repositories.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_MIRROR_URL|@ if one exists.\n")
-    String mirrorUrl;
-
     @CommandLine.Option(names = "--platform",
             description = "The OS platform for the Jenkins node/agent. The possible options are: windows, linux, or macos.\n\n" +
                           "@|bold Default|@: ${DEFAULT-VALUE}\n",
@@ -239,22 +233,6 @@ public class Jenkins implements Callable<Integer> {
 
     @CommandLine.ArgGroup(multiplicity = "1")
     UserSecret userSecret;
-
-    @CommandLine.Option(names = "--gradlePluginVersion",
-            description = "The version of the Moderne Gradle plugin that should be used to build the artifacts.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_GRADLE_PLUGIN_VERSION|@ or " +
-                          "@|bold latest.release|@ if it doesn't exist.\n\n" +
-                          "@|bold Example|@: 0.37.0\n",
-            defaultValue = "${MODERNE_GRADLE_PLUGIN_VERSION}")
-    String gradlePluginVersion;
-
-    @CommandLine.Option(names = "--mvnPluginVersion",
-            description = "The version of the Moderne Maven plugin that should be used to build the artifacts.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_MVN_PLUGIN_VERSION|@ or " +
-                          "@|bold RELEASE|@ if it doesn't exist.\n\n" +
-                          "@|bold Example|@: v0.38.0\n",
-            defaultValue = "${MODERNE_MVN_PLUGIN_VERSION}")
-    String mvnPluginVersion;
 
     @CommandLine.Option(names = "--verbose", defaultValue = "false",
             description = "If enabled, additional debug statements will be printed throughout the Jenkins configuration.\n" +
@@ -668,44 +646,6 @@ public class Jenkins implements Callable<Integer> {
         return command;
     }
 
-    private String createConfigGradleCommand() {
-        if (StringUtils.isBlank(gradlePluginVersion) && StringUtils.isBlank(mirrorUrl)) {
-            return "";
-        }
-
-        boolean isWindowsPlatform = isWindowsPlatform();
-        String command = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
-            command += isWindowsPlatform ? ".\\\\" : "./";
-        }
-        command += String.format("%s config gradle plugin edit",
-                isWindowsPlatform ? "mod.exe" : "mod");
-
-        if (!StringUtils.isBlank(gradlePluginVersion)) {
-            command += String.format(" --version %s", gradlePluginVersion);
-        }
-        if (!StringUtils.isBlank(mirrorUrl)) {
-            command += String.format(" --repository-url %s", mirrorUrl);
-        }
-
-        return command;
-    }
-
-    private String createConfigMavenPluginCommand() {
-        if (StringUtils.isBlank(mvnPluginVersion)) {
-            return "";
-        }
-
-        boolean isWindowsPlatform = isWindowsPlatform();
-        String command = "";
-        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
-            command += isWindowsPlatform ? ".\\\\" : "./";
-        }
-        return command + String.format("%s config maven plugin edit --version %s",
-                isWindowsPlatform ? "mod.exe" : "mod",
-                mvnPluginVersion);
-    }
-
     private String createConfigMavenSettingsCommand() {
         if (StringUtils.isBlank(mavenSettingsConfigFileId)) {
             return "";
@@ -796,14 +736,6 @@ public class Jenkins implements Callable<Integer> {
 
         String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
 
-        String configGradle = createConfigGradleCommand();
-        if (!StringUtils.isBlank(configGradle)) {
-            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configGradle));
-        }
-        String configMavenPlugin = createConfigMavenPluginCommand();
-        if (!StringUtils.isBlank(configMavenPlugin)) {
-            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenPlugin));
-        }
         String configMavenSettings = createConfigMavenSettingsCommand();
         if (!StringUtils.isBlank(configMavenSettings)) {
             builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(configMavenSettings));

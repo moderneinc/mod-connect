@@ -105,9 +105,6 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "2.2.2",
-                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup",
                 "--verbose");
         assertEquals(0, result);
@@ -131,9 +128,6 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "2.2.2",
-                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -177,9 +171,6 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "2.2.2",
-                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -199,9 +190,6 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "2.2.2",
-                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -222,9 +210,6 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "2.2.2",
-                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup");
         assertEquals(0, result);
 
@@ -244,9 +229,6 @@ class JenkinsTest {
                 "--publishCredsId", ARTIFACT_CREDS,
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
-                "--gradlePluginVersion", "2.2.2",
-                "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                "--mvnPluginVersion", "2.4.2",
                 "--workspaceCleanup",
                 "--deleteSkipped=true");
         assertEquals(0, result);
@@ -317,9 +299,6 @@ class JenkinsTest {
                     "--moderneUrl=" + MODERNE_URL,
                     "--moderneToken=" + MODERNE_TOKEN,
                     "--workspaceCleanup",
-                    "--gradlePluginVersion", "2.2.2",
-                    "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                    "--mvnPluginVersion", "2.4.2",
                     "--verbose");
             assertEquals(0, result);
 
@@ -358,9 +337,6 @@ class JenkinsTest {
                     "--moderneToken=" + MODERNE_TOKEN,
                     "--createValidateJobs",
                     "--workspaceCleanup",
-                    "--gradlePluginVersion", "2.2.2",
-                    "--mirrorUrl", "http://artifactory.moderne.internal/artifactory/moderne-cache-3",
-                    "--mvnPluginVersion", "2.4.2",
                     "--verbose");
             assertEquals(0, result);
 
