@@ -1,0 +1,6 @@
+    <hudson.plugins.powershell.PowerShell plugin="powershell@%s">
+      <command>%s</command>
+      <configuredLocalRules/>
+      <useProfile>true</useProfile>
+      <stopOnError>true</stopOnError>
+    </hudson.plugins.powershell.PowerShell>

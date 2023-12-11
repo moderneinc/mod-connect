@@ -43,5 +43,6 @@
   <buildWrappers>
 %s
 %s
+%s
   </buildWrappers>
 </project>
