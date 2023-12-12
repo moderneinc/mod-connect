@@ -384,4 +384,28 @@ class JenkinsTest {
         }
 
     }
+
+    @Test
+    void submitJobExtraCredentials() throws Exception {
+        int result = cmd.execute("jenkins",
+                "--fromCsv", new File("src/test/csv/repos.csv").getAbsolutePath(),
+                "--controllerUrl", jenkinsHost,
+                "--jenkinsUser", JENKINS_TESTING_USER,
+                "--apiToken", apiToken,
+                "--publishCredsId", ARTIFACT_CREDS,
+                "--gitCredsId", GIT_CREDS,
+                "--publishUrl", ARTIFACTORY_URL,
+                "--workspaceCleanup",
+                "--credentials", "extraCredentials1=TOKEN_VARIABLE",
+                "--credentials", "extraCredentials2=USER_VARIABLE:PASSWORD_VARIABLE");
+        assertEquals(0, result);
+
+        await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
+                .asString().isSuccess()));
+
+        HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
+        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-credentials.xml").toPath()));
+        assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
+    }
 }
