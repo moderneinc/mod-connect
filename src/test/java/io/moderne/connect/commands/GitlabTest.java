@@ -167,7 +167,7 @@ class GitlabTest {
             gitlab.publishUserSecretName = "PUBLISH_USER";
             gitlab.skipSSL = true;
             assertBuildSteps(
-                    "./mod config artifacts edit --skipSSL --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
+                    "./mod config artifacts edit --skip-ssl --user=$PUBLISH_USER --password=$PUBLISH_SECRET https://my.artifactory/moderne-ingest",
                     "./mod build $REPO_PATH --no-download --active-styles some-style --additional-build-args \"--magic\"",
                     "./mod publish $REPO_PATH"
             );

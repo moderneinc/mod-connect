@@ -620,9 +620,9 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config artifacts edit %s--user=%s --password=%s %s",
+        command += String.format("%s config artifacts edit %s--user=%s --password=%s %s --local .",
                 isWindowsPlatform ? "mod.exe" : "mod",
-                skipSSL ? "--skipSSL " : "",
+                skipSSL ? "--skip-ssl " : "",
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_PWD" : "${ARTIFACTS_PUBLISH_CRED_PWD}",
                 publishUrl
@@ -640,7 +640,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config moderne edit --token=%s %s",
+        command += String.format("%s config moderne edit --token=%s %s --local .",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}",
                 tenant.moderneUrl
@@ -659,9 +659,9 @@ public class Jenkins implements Callable<Integer> {
             command += isWindowsPlatform ? ".\\" : "./";
         }
 
-        return command + String.format("%s config maven settings edit %s",
+        return command + String.format("%s config maven settings edit %s --local .",
                 isWindowsPlatform ? "mod.exe" : "mod",
-                isWindowsPlatform ? "\"\\$env:MODERNE_MVN_SETTINGS_XML\"" : "\"\\${MODERNE_MVN_SETTINGS_XML}\"");
+                isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}");
     }
 
     private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
