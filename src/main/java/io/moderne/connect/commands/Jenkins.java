@@ -278,6 +278,12 @@ public class Jenkins implements Callable<Integer> {
         String moderneToken;
     }
 
+    @CommandLine.Option(names = "--credentials",
+        description = "Extra credentials to bind in the form of " +
+                      "CRENDENTIALS_ID=VARIABLE for StringBinding or " +
+                      "CREDENTIALS_ID=USERNAME_VARIABLE:PASSWORD_VARIABLE for UsernamePasswordMultiBinding")
+    Map<String, String> extraCredentials;
+
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
 
     private static final String PLATFORM_WINDOWS = "windows";
@@ -859,6 +865,18 @@ public class Jenkins implements Callable<Integer> {
         if (!StringUtils.isBlank(downloadCLICreds)) {
             bindings.append("\n");
             bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION.format(downloadCLICreds, "CLI_DOWNLOAD_CRED_USR", "CLI_DOWNLOAD_CRED_PWD"));
+        }
+
+        if (extraCredentials != null) {
+            for (Map.Entry<String, String> entry : extraCredentials.entrySet()) {
+                String credentialsId = entry.getKey();
+                String[] variables = entry.getValue().split(":");
+                if (variables.length == 1) {
+                    bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_TOKEN_DEFINITION.format(credentialsId, variables[0]));
+                } else if (variables.length == 2) {
+                    bindings.append(Templates.FREESTYLE_CREDENTIALS_BINDING_USER_DEFINITION.format(credentialsId, variables[0], variables[1]));
+                }
+            }
         }
     }
 
