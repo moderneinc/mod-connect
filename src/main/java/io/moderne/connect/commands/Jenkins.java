@@ -282,7 +282,7 @@ public class Jenkins implements Callable<Integer> {
         description = "Extra credentials to bind in the form of " +
                       "CRENDENTIALS_ID=VARIABLE for StringBinding or " +
                       "CREDENTIALS_ID=USERNAME_VARIABLE:PASSWORD_VARIABLE for UsernamePasswordMultiBinding")
-    Map<String, String> extraCredentials;
+    Map<String, String> extraCredentials = new HashMap<>();
 
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
 
