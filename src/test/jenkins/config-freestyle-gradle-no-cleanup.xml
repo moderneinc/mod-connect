@@ -47,7 +47,7 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config moderne edit --token=${MODERNE_TOKEN} https://app.moderne.io </command>
+            <command>./mod config moderne edit --local=. --token=${MODERNE_TOKEN} https://app.moderne.io </command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
@@ -55,7 +55,7 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config build maven settings edit ${MODERNE_MVN_SETTINGS_XML} </command>
+            <command>./mod config build maven settings edit --local=. ${MODERNE_MVN_SETTINGS_XML} </command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>

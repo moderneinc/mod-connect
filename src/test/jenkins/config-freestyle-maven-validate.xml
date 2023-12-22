@@ -70,7 +70,7 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config build maven settings edit ${MODERNE_MVN_SETTINGS_XML} </command>
+            <command>./mod config build maven settings edit --local=. ${MODERNE_MVN_SETTINGS_XML} </command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>

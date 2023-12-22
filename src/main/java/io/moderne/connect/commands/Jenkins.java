@@ -646,7 +646,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config moderne edit --token=%s %s ",
+        command += String.format("%s config moderne edit --local=. --token=%s %s ",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}",
                 tenant.moderneUrl
@@ -665,7 +665,7 @@ public class Jenkins implements Callable<Integer> {
             command += isWindowsPlatform ? ".\\" : "./";
         }
 
-        return command + String.format("%s config build maven settings edit %s ",
+        return command + String.format("%s config build maven settings edit --local=. %s ",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}");
     }
