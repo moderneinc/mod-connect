@@ -471,7 +471,7 @@ public class GitLab implements Callable<Integer> {
         if (publishUrl == null) {
             return ""; // for unit tests, will always be non-null in production
         }
-        String args = String.format("config artifacts artifactory edit %s--user=%s --password=%s %s",
+        String args = String.format("config artifacts artifactory edit --local=. %s--user=%s --password=%s %s",
                 skipSSL ? "--skip-ssl " : "",
                 variable(publishUserSecretName),
                 variable(publishPwdSecretName),

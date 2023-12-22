@@ -626,7 +626,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config artifacts artifactory edit %s--user=%s --password=%s %s --local .",
+        command += String.format("%s config artifacts artifactory edit --local=. %s--user=%s --password=%s %s --local .",
                 isWindowsPlatform ? "mod.exe" : "mod",
                 skipSSL ? "--skip-ssl " : "",
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
