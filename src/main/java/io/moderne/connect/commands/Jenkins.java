@@ -670,19 +670,13 @@ public class Jenkins implements Callable<Integer> {
                 isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}");
     }
 
-    private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
+    private String createBuildCommand() {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             prefix += isWindowsPlatform ? ".\\" : "./";
         }
         String command = String.format("%s%s build . --no-download", prefix, isWindowsPlatform ? "mod.exe" : "mod");
-        if (!StringUtils.isBlank(activeStyle)) {
-            command += " --active-styles " + activeStyle;
-        }
-        if (!StringUtils.isBlank(additionalBuildArgs)) {
-            command += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
-        }
         if (!StringUtils.isBlank(commandSuffix)) {
             command += " " + commandSuffix;
         }
@@ -783,7 +777,7 @@ public class Jenkins implements Callable<Integer> {
             }
         }
 
-        String buildCommand = createBuildCommand(repoStyle, repoBuildAction);
+        String buildCommand = createBuildCommand();
         String configMavenSettings = createConfigMavenSettingsCommand();
         if (!StringUtils.isBlank(configMavenSettings)) {
             if (isWindowsPlatform) {

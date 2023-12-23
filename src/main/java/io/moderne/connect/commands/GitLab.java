@@ -377,7 +377,7 @@ public class GitLab implements Callable<Integer> {
                 }
 
 
-                buildJobs.put(String.format("build-%s", repoPath), createBuildLstJob(repoPath, branch, repoStyle, additionalBuildArgs));
+                buildJobs.put(String.format("build-%s", repoPath), createBuildLstJob(repoPath, branch));
                 lineNumber++;
             }
 
@@ -423,7 +423,7 @@ public class GitLab implements Callable<Integer> {
                 .build();
     }
 
-    GitLabYaml.Job createBuildLstJob(String repoPath, String branch, String activeStyle, String additionalBuildArgs) {
+    GitLabYaml.Job createBuildLstJob(String repoPath, String branch) {
         GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder();
         String user = StringUtils.isBlank(repositoryAccessUserSecretName) ? "gitlab-ci-token" : variable(repositoryAccessUserSecretName);
         String token = StringUtils.isBlank(repositoryAccessTokenSecretName) ? variable("CI_JOB_TOKEN") : variable(repositoryAccessTokenSecretName);
@@ -457,7 +457,7 @@ public class GitLab implements Callable<Integer> {
                     .policy(GitLabYaml.Cache.Policy.PULL).build());
         }
         return builder
-                .command(createBuildCommand(activeStyle, additionalBuildArgs))
+                .command(createBuildCommand())
                 .command(createPublishCommand())
                 .artifacts(GitLabYaml.Artifacts.builder()
                         .when(GitLabYaml.Artifacts.When.ALWAYS)
@@ -496,14 +496,8 @@ public class GitLab implements Callable<Integer> {
         return modCommand(args);
     }
 
-    private String createBuildCommand(String activeStyle, String additionalBuildArgs) {
+    private String createBuildCommand() {
         String args = "build $REPO_PATH --no-download";
-        if (!StringUtils.isBlank(activeStyle)) {
-            args += " --active-styles " + activeStyle;
-        }
-        if (!StringUtils.isBlank(additionalBuildArgs)) {
-            args += String.format(" --additional-build-args \"%s\"", additionalBuildArgs);
-        }
         if (!StringUtils.isBlank(mirrorUrl)) {
             args += " --mirror-url " + mirrorUrl;
         }
