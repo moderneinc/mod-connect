@@ -192,30 +192,6 @@ public class GitLab implements Callable<Integer> {
                           "the Expand button inside your GitLab repository.\n")
     String downloadCLIPasswordSecretName;
 
-    @CommandLine.Option(names = "--gradlePluginVersion",
-            description = "The version of the Moderne Gradle plugin that should be used to build the artifacts.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_GRADLE_PLUGIN_VERSION|@ or " +
-                          "@|bold latest.release|@ if it doesn't exist.\n\n" +
-                          "@|bold Example|@: 0.37.0\n",
-            defaultValue = "${MODERNE_GRADLE_PLUGIN_VERSION}")
-    String gradlePluginVersion;
-
-    @CommandLine.Option(names = "--mvnPluginVersion",
-            description = "The version of the Moderne Maven plugin that should be used to build the artifacts.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_MVN_PLUGIN_VERSION|@ or " +
-                          "@|bold RELEASE|@ if it doesn't exist.\n\n" +
-                          "@|bold Example|@: v0.38.0\n",
-            defaultValue = "${MODERNE_MVN_PLUGIN_VERSION}")
-    String mvnPluginVersion;
-
-    @CommandLine.Option(
-            names = "--mirrorUrl",
-            defaultValue = "${MODERNE_MIRROR_URL}",
-            description = "For Gradle projects, this can be specified as a Maven repository cache/mirror to check " +
-                          "before any other repositories.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_MIRROR_URL|@ if one exists.\n")
-    String mirrorUrl;
-
     @CommandLine.Option(
             names = "--jobTag",
             description = "If specified, GitLab jobs will be tagged with this value for runners to pick up.\n",
@@ -302,8 +278,8 @@ public class GitLab implements Callable<Integer> {
             return 1;
         }
 
-        if (!cliVersion.startsWith("v0.4") && !cliVersion.startsWith("v0.5") && !cliVersion.startsWith("v1")) {
-            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v0.4");
+        if (!cliVersion.startsWith("v2")) {
+            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v2");
             return 1;
         }
 
@@ -498,15 +474,6 @@ public class GitLab implements Callable<Integer> {
 
     private String createBuildCommand() {
         String args = "build $REPO_PATH --no-download";
-        if (!StringUtils.isBlank(mirrorUrl)) {
-            args += " --mirror-url " + mirrorUrl;
-        }
-        if (!StringUtils.isBlank(gradlePluginVersion)) {
-            args += " --gradle-plugin-version " + gradlePluginVersion;
-        }
-        if (!StringUtils.isBlank(mvnPluginVersion)) {
-            args += " --maven-plugin-version " + mvnPluginVersion;
-        }
         if (!StringUtils.isBlank(commandSuffix)) {
             args += " " + commandSuffix;
         }

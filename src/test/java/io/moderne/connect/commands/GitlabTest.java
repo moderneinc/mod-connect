@@ -37,7 +37,7 @@ class GitlabTest {
     void setup() {
         gitlab.downloadCLI = true;
         gitlab.platform = "linux";
-        gitlab.cliVersion = "v1.0.3";
+        gitlab.cliVersion = "v2.0.5";
     }
 
     @Nested
@@ -220,19 +220,6 @@ class GitlabTest {
             );
         }
 
-        @Test
-        void submitJobWithMavenPluginVersion() {
-            gitlab.mvnPluginVersion = "5.0.2";
-            assertBuildSteps("./mod build $REPO_PATH --no-download --maven-plugin-version 5.0.2",
-                    "./mod publish $REPO_PATH");
-        }
-
-        @Test
-        void submitJobWithGradlePluginVersion() {
-            gitlab.gradlePluginVersion = "5.0.2";
-            assertBuildSteps("./mod build $REPO_PATH --no-download --gradle-plugin-version 5.0.2",
-                    "./mod publish $REPO_PATH");
-        }
 
         @Test
         void useProvidedGitLabCredentials() {
