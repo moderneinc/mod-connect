@@ -2,12 +2,20 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress until="2024-01-11Z">
         <notes><![CDATA[
-            file name: jackson-core-2.15.1.jar
+            file name: jackson-core-2.15.3.jar
             SEV: HIGH
             Reason: False positive. CVE is for JSON-Java, not Jackson.
         ]]>
         </notes>
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-core@.*$</packageUrl>
         <cve>CVE-2023-5072</cve>
+    </suppress>
+    <suppress until="2024-01-27Z">
+        <notes><![CDATA[
+       file name: jackson-core-2.15.3.jar
+       Not using jackson for xml
+       ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-core@.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
     </suppress>
 </suppressions>

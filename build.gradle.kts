@@ -8,7 +8,7 @@ plugins {
     application
     `maven-publish`
     id("nebula.release") version "17.1.0"
-    id("org.owasp.dependencycheck") version "8.1.0"
+    id("org.owasp.dependencycheck") version "latest.release"
     id("java-library-distribution")
     id("org.asciidoctor.jvm.convert") version "3.3.2"
     id("com.github.hierynomus.license") version "0.16.1"
@@ -55,7 +55,7 @@ configurations {
     }
 }
 
-val jacksonVersion = "2.15.1"
+val jacksonVersion = "2.15.3"
 dependencies {
     implementation("info.picocli:picocli:latest.release")
     annotationProcessor("info.picocli:picocli-codegen:latest.release")
