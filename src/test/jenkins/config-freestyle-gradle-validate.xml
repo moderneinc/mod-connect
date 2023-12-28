@@ -65,7 +65,7 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v1.4.11/moderne-cli-linux-v1.4.11 --fail -o mod;
+            <command>curl --request GET https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-linux/v2.0.5/moderne-cli-linux-v2.0.5 --fail -o mod;
                 chmod 755 mod;</command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
