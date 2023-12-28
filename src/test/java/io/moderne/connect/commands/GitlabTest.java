@@ -79,10 +79,10 @@ class GitlabTest {
         void download() {
             gitlab.downloadCLI = true;
             gitlab.platform = "macos";
-            gitlab.cliVersion = "v1.0.3";
+            gitlab.cliVersion = "v2.0.5";
 
             assertDownloadSteps("[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0",
-                    "curl --fail --location --output mod --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v1.0.3/moderne-cli-macos-v1.0.3'",
+                    "curl --fail --location --output mod --request GET --url 'https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-macos/v2.0.5/moderne-cli-macos-v2.0.5'",
                     "chmod 755 mod"
             );
         }
