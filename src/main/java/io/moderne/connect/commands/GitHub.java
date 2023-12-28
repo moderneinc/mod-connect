@@ -219,11 +219,11 @@ public class GitHub implements Callable<Integer> {
                     "@|bold Example|@: -Dmaven.antrun.skip=true\n")
     private String additionalBuildArgs;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v1.0.3",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v2.0.5",
             description = "The version of the Moderne CLI that should be used when running the ingestion workflow. " +
                     "Follows standard semantic versioning with a v in front.\n" +
                     "\n" +
-                    "@|bold Example|@: @|bold v0.0.50|@\n")
+                    "@|bold Example|@: @|bold v2.0.5|@\n")
     private String cliVersion;
 
     @CommandLine.Option(names = "--dispatchSecretName",
