@@ -35,10 +35,6 @@ import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.SPLIT_
 public class GitLabYaml {
 
     public enum Stage {
-
-        @JsonProperty("download")
-        DOWNLOAD,
-
         @JsonProperty("build-lst")
         BUILD_LST
     }
@@ -65,15 +61,12 @@ public class GitLabYaml {
 
         @Singular
         List<Stage> stages;
-        Job download;
-
         @Singular
         Map<String, Job> jobs;
 
         Map<String, Object> prepareYamlMap() {
             Map<String, Object> pipeline = new LinkedHashMap<>();
             pipeline.put("stages", stages);
-            pipeline.put("download", download);
             pipeline.putAll(jobs);
             return pipeline;
         }

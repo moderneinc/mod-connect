@@ -120,12 +120,6 @@ public class GitLab implements Callable<Integer> {
     String publishUrl;
 
     @CommandLine.Option(
-            names = "--cliVersion",
-            defaultValue = "v1.0.3",
-            description = "The version of the Moderne CLI that should be used when running GitLab jobs.\n")
-    String cliVersion;
-
-    @CommandLine.Option(
             names = "--commandSuffix",
             defaultValue = "",
             description = "The suffix that should be appended to the Moderne CLI command when running GitLab jobs.\n\n" +
@@ -155,42 +149,6 @@ public class GitLab implements Callable<Integer> {
                           "The minimum required grant is @|bold read_repository|@.\n" +
                           "If no token is specified, the $CI_JOB_TOKEN is used.\n")
     String repositoryAccessTokenSecretName;
-
-    @CommandLine.Option(names = "--downloadCLI",
-            defaultValue = "false",
-            description = "Specifies whether or not the Moderne CLI should be downloaded at the beginning of each run." +
-                          "Should be set to true when the base image does not include the CLI\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
-    boolean downloadCLI;
-
-    @CommandLine.Option(
-            names = "--downloadCLIUrl",
-            description = "Specifies an internal URL to download the CLI from if you'd prefer to host the CLI yourself.\n")
-    String downloadCLIUrl;
-
-    @CommandLine.Option(
-            names = "--downloadCLITokenSecret",
-            description = "The name of the GitLab secret that contains a Bearer token needed to download the CLI\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
-    String downloadCLITokenSecretName;
-
-    @CommandLine.Option(
-            names = "--downloadCLIUserNameSecret",
-            description = "The name of the GitLab secret that contains the username needed to download the CLI\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
-    String downloadCLIUserNameSecretName;
-
-    @CommandLine.Option(
-            names = "--downloadCLIPasswordSecret",
-            description = "The name of the GitLab secret that contains the password needed to download the CLI\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
-    String downloadCLIPasswordSecretName;
 
     @CommandLine.Option(
             names = "--jobTag",
@@ -223,14 +181,6 @@ public class GitLab implements Callable<Integer> {
                           "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
             defaultValue = "registry.gitlab.com/moderneinc/moderne-gitlab-ingest:latest")
     String dockerImageBuildJob;
-
-    @CommandLine.Option(names = "--dockerImageDownloadJob",
-            description = "The full name of the docker image to run the download job on.\n" +
-                          "This image should be based on unix and requires curl to be present.\n" +
-                          "\n" +
-                          "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
-            defaultValue = "ruby:latest")
-    String dockerImageDownloadJob;
 
     @CommandLine.Option(names = "--buildJobRetries",
             description = "Retries to attempt for the build job. Options are: 0, 1 or 2.\n" +
@@ -275,11 +225,6 @@ public class GitLab implements Callable<Integer> {
     public Integer call() {
         if (!fromCsv.toFile().exists()) {
             System.err.println(fromCsv.toString() + " does not exist");
-            return 1;
-        }
-
-        if (!cliVersion.startsWith("v2")) {
-            System.err.println("Unsupported CLI version: " + cliVersion + ". Please use a version greater than v2");
             return 1;
         }
 
@@ -358,45 +303,11 @@ public class GitLab implements Callable<Integer> {
             }
 
             GitLabYaml.Pipeline.PipelineBuilder builder = GitLabYaml.Pipeline.builder();
-            if (downloadCLI) {
-                builder.stage(GitLabYaml.Stage.DOWNLOAD).download(createDownloadJob());
-            }
             return builder
                     .stage(GitLabYaml.Stage.BUILD_LST)
                     .jobs(buildJobs)
                     .build();
         }
-    }
-
-    GitLabYaml.Job createDownloadJob() {
-        String downloadURL = downloadCLIUrl;
-        if (StringUtils.isBlank(downloadURL)) {
-            downloadURL = String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
-        }
-        String baseCommand = String.format("curl --fail --location --output mod --request GET --url '%s'", downloadURL);
-        String downloadCommand = baseCommand;
-        if (StringUtils.isNotBlank(downloadCLITokenSecretName)) {
-            downloadCommand = String.format("%s --header 'Authorization: Bearer %s'", baseCommand, variable(downloadCLITokenSecretName));
-        } else if (StringUtils.isNotBlank(downloadCLIUserNameSecretName)) {
-            downloadCommand = String.format("%s --user %s:%s", baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
-        }
-
-
-        String ifFileExistsExit = "[ -f 'mod' ] && echo 'mod loaded from cache, skipping download.' && ./mod help && exit 0";
-        GitLabYaml.Job.JobBuilder builder = GitLabYaml.Job.builder();
-        if (StringUtils.isNotBlank(jobTag)) {
-            builder.tags(Collections.singletonList(jobTag));
-        }
-        return builder.stage(GitLabYaml.Stage.DOWNLOAD)
-                .cache(GitLabYaml.Cache.builder()
-                        .key(createCliCacheKey())
-                        .path("mod")
-                        .policy(GitLabYaml.Cache.Policy.PUSH_AND_PULL).build())
-                .command(ifFileExistsExit)
-                .command(downloadCommand)
-                .command("chmod 755 mod")
-                .image(dockerImageDownloadJob)
-                .build();
     }
 
     GitLabYaml.Job createBuildLstJob(String repoPath, String branch) {
@@ -425,12 +336,6 @@ public class GitLab implements Callable<Integer> {
         String artifactCommand = createConfigArtifactsCommand();
         if (StringUtils.isNotBlank(artifactCommand)) {
             builder.command(artifactCommand);
-        }
-        if (downloadCLI) {
-            builder.cache(GitLabYaml.Cache.builder()
-                    .key(createCliCacheKey())
-                    .path("mod")
-                    .policy(GitLabYaml.Cache.Policy.PULL).build());
         }
         return builder
                 .command(createBuildCommand())
@@ -487,9 +392,6 @@ public class GitLab implements Callable<Integer> {
     private String modCommand(String args) {
         boolean isWindowsPlatform = isWindowsPlatform();
         String prefix = "";
-        if (downloadCLI) {
-            prefix = isWindowsPlatform ? ".\\\\" : "./";
-        }
         String executable = isWindowsPlatform ? "mod.exe" : "mod";
         return String.format("%s%s %s", prefix, executable, args);
     }
@@ -501,13 +403,4 @@ public class GitLab implements Callable<Integer> {
     private boolean isWindowsPlatform() {
         return PLATFORM_WINDOWS.equals(platform);
     }
-
-    private String createCliCacheKey() {
-        if (StringUtils.isBlank(downloadCLIUrl)) {
-            return String.format("cli-%s-%s", platform, cliVersion);
-        }
-        String encodedUrl = new String(Base64.getEncoder().encode(downloadCLIUrl.getBytes()));
-        return String.format("cli-%s", encodedUrl);
-    }
-
 }

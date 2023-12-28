@@ -26,18 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GitLabYamlTest {
     @Test
     void writePipelineYaml() {
-        GitLabYaml.Job download = GitLabYaml.Job.builder()
-                .cache(GitLabYaml.Cache.builder().key("cli-v4.4.0")
-                        .paths(List.of("mod"))
-                        .policy(GitLabYaml.Cache.Policy.PUSH_AND_PULL)
-                        .build())
-                .stage(GitLabYaml.Stage.DOWNLOAD)
-                .tags(List.of("docker"))
-                .variables(Map.of("GITLAB_HOST", "gitlab.com"))
-                .command("echo \"download CLI if not exists\"")
-                .build();
-
-
         GitLabYaml.Job job = GitLabYaml.Job.builder()
                 .cache(GitLabYaml.Cache.builder().key("key")
                         .paths(List.of("a", "b"))
@@ -52,8 +40,6 @@ class GitLabYamlTest {
 
 
         GitLabYaml.Pipeline pipeline = GitLabYaml.Pipeline.builder()
-                .stage(GitLabYaml.Stage.DOWNLOAD)
-                .download(download)
                 .stage(GitLabYaml.Stage.BUILD_LST)
                 .job("build-a", job)
                 .job("build-b", job)
@@ -64,23 +50,7 @@ class GitLabYamlTest {
         //language=yaml
         String expected = """
                 stages:
-                - download
                 - build-lst
-                download:
-                  cache:
-                    key: cli-v4.4.0
-                    paths:
-                    - mod
-                    policy: pull-push
-                  stage: download
-                  tags:
-                  - docker
-                  variables:
-                    GITLAB_HOST: gitlab.com
-                  before_script: []
-                  script:
-                  - echo "download CLI if not exists"
-                  retry: 0
                 build-a:
                   image: ruby:latest
                   cache:
