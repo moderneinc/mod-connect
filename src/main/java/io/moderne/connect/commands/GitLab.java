@@ -121,7 +121,7 @@ public class GitLab implements Callable<Integer> {
 
     @CommandLine.Option(
             names = "--cliVersion",
-            defaultValue = "v1.0.3",
+            defaultValue = "v2.0.5",
             description = "The version of the Moderne CLI that should be used when running GitLab jobs.\n")
     String cliVersion;
 
