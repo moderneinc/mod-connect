@@ -155,7 +155,7 @@ public class Jenkins implements Callable<Integer> {
             description = "An expression to match the Jenkins agent that will run the job.\n")
     String agent;
 
-    @CommandLine.Option(names = "--cliVersion", defaultValue = "v1.4.11",
+    @CommandLine.Option(names = "--cliVersion", defaultValue = "v2.0.5",
             description = "The version of the Moderne CLI that should be used when running Jenkins Jobs.\n")
     String cliVersion;
 
