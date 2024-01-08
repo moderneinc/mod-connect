@@ -32,6 +32,6 @@ public class VersionTest {
         cmd.setOut(new PrintWriter(sw));
         cmd.setErr(new PrintWriter(sw));
         assertEquals(0, cmd.execute("version"));
-        assertEquals("development\n", sw.toString());
+        assertEquals("development" + System.lineSeparator(), sw.toString());
     }
 }

@@ -790,10 +790,12 @@ public class Jenkins implements Callable<Integer> {
             }
         }
 
-        if (isWindowsPlatform) {
-            builder.append(Templates.FREESTYLE_POWERSHELL_DEFINITION.format(plugins.get(POWERSHELL_PLUGIN), createConfigJavaCommand(jdkTool)));
-        } else {
-            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigJavaCommand(jdkTool)));
+        if (!StringUtils.isBlank(jdkTool)) {
+            if (isWindowsPlatform) {
+                builder.append(Templates.FREESTYLE_POWERSHELL_DEFINITION.format(plugins.get(POWERSHELL_PLUGIN), createConfigJavaCommand(jdkTool)));
+            } else {
+                builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigJavaCommand(jdkTool)));
+            }
         }
 
         String buildCommand = createBuildCommand();

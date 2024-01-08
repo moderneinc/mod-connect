@@ -33,6 +33,7 @@ class ConnectTest {
         sw = new StringWriter();
         cmd.setOut(new PrintWriter(sw));
         cmd.setErr(new PrintWriter(sw));
+        cmd.setColorScheme(new CommandLine.Help.ColorScheme.Builder(CommandLine.Help.Ansi.OFF).build());
     }
 
     @Test
