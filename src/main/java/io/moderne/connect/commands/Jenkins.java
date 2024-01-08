@@ -371,7 +371,7 @@ public class Jenkins implements Callable<Integer> {
                 String branch = values[2];
                 String mavenTool = values[3];
                 String gradleTool = values[4];
-                // String jdkTool = values[5]; // TODO Remove jdkTool https://github.com/moderneinc/jenkins-ingest/pull/161
+                String jdkTool = values[5];
                 String repoStyle = values[6];
                 String repoBuildAction = values[7];
                 String repoSkip = values[8];
@@ -420,7 +420,7 @@ public class Jenkins implements Callable<Integer> {
                 }
 
                 // Create the Jenkins job
-                String job = createJob(plugins, branch, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL, false);
+                String job = createJob(plugins, branch, jdkTool, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL, false);
                 responses.add(executorService.submit(() -> createJob(folder, projectName, job)));
 
                 if (createValidateJobs) {
@@ -429,7 +429,7 @@ public class Jenkins implements Callable<Integer> {
                         createFolder(plugins, validateFolder);
                     }
 
-                    String validateJob = createJob(plugins, branch, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL, true);
+                    String validateJob = createJob(plugins, branch, jdkTool, mavenTool, gradleTool, repoStyle, repoBuildAction, gitURL, true);
                     responses.add(executorService.submit(() -> createJob(validateFolder, projectName, validateJob)));
                 }
 
@@ -460,10 +460,10 @@ public class Jenkins implements Callable<Integer> {
         }
     }
 
-    String createJob(Map<String, String> plugins, String branch, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, String gitURL, boolean isValidateJob) {
+    String createJob(Map<String, String> plugins, String branch, String jdkTool, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, String gitURL, boolean isValidateJob) {
         String scm = createFreestyleScm(plugins, gitURL, branch);
         String assignedNode = StringUtils.isBlank(agent)? "  <canRoam>true</canRoam>" : "  <assignedNode>" + agent.replace("&", "&amp;") + "</assignedNode>\n  <canRoam>false</canRoam>";
-        String steps = createFreestyleSteps(plugins, mavenTool, gradleTool, repoStyle, repoBuildAction, isValidateJob);
+        String steps = createFreestyleSteps(plugins, jdkTool, mavenTool, gradleTool, repoStyle, repoBuildAction, isValidateJob);
         String credentials = isValidateJob ? createFreestyleValidateCredentials(plugins, gitURL) : createFreestyleCredentials(plugins);
         String configFiles = createFreestyleConfigFiles(plugins);
         String cleanup = createFreestyleCleanup(plugins);
@@ -636,6 +636,19 @@ public class Jenkins implements Callable<Integer> {
         return command;
     }
 
+    private String createConfigJavaCommand(String jdkTool) {
+        boolean isWindowsPlatform = isWindowsPlatform();
+        String command = "";
+        if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
+            command += isWindowsPlatform ? ".\\" : "./";
+        }
+        command += String.format("%s config java version edit --local=. %s",
+                isWindowsPlatform ? "mod.exe" : "mod",
+                jdkTool
+        );
+        return command;
+    }
+
     private String createConfigTenantCommand() {
         if (tenant == null) {
             return "";
@@ -729,7 +742,7 @@ public class Jenkins implements Callable<Integer> {
         }
     }
 
-    private String createFreestyleSteps(Map<String, String> plugins, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, boolean isValidate) {
+    private String createFreestyleSteps(Map<String, String> plugins, String jdkTool, String mavenTool, String gradleTool, String repoStyle, String repoBuildAction, boolean isValidate) {
         StringBuilder builder = new StringBuilder();
 
         boolean isWindowsPlatform = isWindowsPlatform();
@@ -775,6 +788,12 @@ public class Jenkins implements Callable<Integer> {
             } else {
                 builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigArtifactsCommand()));
             }
+        }
+
+        if (isWindowsPlatform) {
+            builder.append(Templates.FREESTYLE_POWERSHELL_DEFINITION.format(plugins.get(POWERSHELL_PLUGIN), createConfigJavaCommand(jdkTool)));
+        } else {
+            builder.append(Templates.FREESTYLE_SHELL_DEFINITION.format(createConfigJavaCommand(jdkTool)));
         }
 
         String buildCommand = createBuildCommand();
