@@ -31,16 +31,22 @@ import java.util.concurrent.Callable;
         descriptionHeading = "%n@|bold,underline Description|@:%n%n",
         parameterListHeading = "%n@|bold,underline Parameters|@:%n%n",
         optionListHeading = "%n@|bold,underline Options|@:%n%n",
-        header = "Creates a GitLab job with each configured repository that will build and publish LST artifacts " +
-                 "to your artifact repository.",
-        description = "Creates a GitLab job for each configured repository that will build and publish LST artifacts " +
-                      "to your artifact repository on a regular basis.\n\n" +
-                      "@|bold,underline Example|@:\n\n" +
-                      "  mod connect gitlab\\\n" +
-                      "     --fromCsv /path/to/repos.csv \\\n" +
-                      "     --publishUserSecretName publishUserSecretName \\\n" +
-                      "     --publishPwdSecretName publishPwdSecretName \\\n" +
-                      "     --publishUrl https://artifact-place.com/artifactory/moderne-ingest")
+        header = """
+                 Creates a GitLab job with each configured repository that will build and publish LST artifacts \
+                 to your artifact repository.\
+                 """,
+        description = """
+                      Creates a GitLab job for each configured repository that will build and publish LST artifacts \
+                      to your artifact repository on a regular basis.
+                      
+                      @|bold,underline Example|@:
+                      
+                        mod connect gitlab\\
+                           --fromCsv /path/to/repos.csv \\
+                           --publishUserSecretName publishUserSecretName \\
+                           --publishPwdSecretName publishPwdSecretName \\
+                           --publishUrl https://artifact-place.com/artifactory/moderne-ingest\
+                      """)
 public class GitLab implements Callable<Integer> {
 
     /**
@@ -49,41 +55,44 @@ public class GitLab implements Callable<Integer> {
 
     @CommandLine.Option(names = "--fromCsv",
             required = true,
-            description = "The location of the CSV file containing the list of repositories that should be ingested. " +
-                          "One GitLab job will run for each repository. Follows the schema of:\n" +
-                          "\n" +
-                          "@|bold [repoName,repoBranch,desiredStyle,additionalBuildArgs,skip,skipReason]|@\n" +
-                          "\n" +
-                          "* @|bold repoName|@: @|bold Required|@ - The repository that should be ingested. Follows the " +
-                          "format of: organization/repository.\n" +
-                          "\n" +
-                          "** @|bold Example|@: openrewrite/rewrite\n" +
-                          "\n" +
-                          "* @|bold repoBranch|@: @|italic Optional|@ - The branch of the above repository that should be " +
-                          "ingested.\n" +
-                          "\n" +
-                          "** @|bold Default|@: main\n" +
-                          "\n" +
-                          "* @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during ingest.\n" +
-                          "\n" +
-                          "** @|bold Example|@: org.openrewrite.java.SpringFormat\n" +
-                          "\n" +
-                          "* @|bold additionalBuildArgs|@: @|italic Optional|@ - Additional arguments that are added to " +
-                          "the Maven or Gradle build command.\n" +
-                          "\n" +
-                          "** @|bold Example|@: -Dmaven.antrun.skip=true\n" +
-                          "\n" +
-                          "* @|bold skip|@: @|italic Optional|@ - If set to true, this repo will not be ingested.\n" +
-                          "\n" +
-                          "** @|bold Default|@: false\n" +
-                          "\n" +
-                          "* @|bold skipReason|@: @|italic Optional|@ - The context for why the repo is being skipped.\n" +
-                          "\n\n" +
-                          "@|bold CSV Example|@:\n" +
-                          "\n" +
-                          "  ,openrewrite/rewrite-spring,main,,gradle,,,,,\n" +
-                          "  ,openrewrite/rewrite-java-migration,main,,gradle,,,,,\n" +
-                          "  additional rows...\n"
+            description = """
+                          The location of the CSV file containing the list of repositories that should be ingested. \
+                          One GitLab job will run for each repository. Follows the schema of:
+                          
+                          @|bold [repoName,repoBranch,desiredStyle,additionalBuildArgs,skip,skipReason]|@
+                          
+                          * @|bold repoName|@: @|bold Required|@ - The repository that should be ingested. Follows the \
+                          format of: organization/repository.
+                          
+                          ** @|bold Example|@: openrewrite/rewrite
+                          
+                          * @|bold repoBranch|@: @|italic Optional|@ - The branch of the above repository that should be \
+                          ingested.
+                          
+                          ** @|bold Default|@: main
+                          
+                          * @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during ingest.
+                          
+                          ** @|bold Example|@: org.openrewrite.java.SpringFormat
+                          
+                          * @|bold additionalBuildArgs|@: @|italic Optional|@ - Additional arguments that are added to \
+                          the Maven or Gradle build command.
+                          
+                          ** @|bold Example|@: -Dmaven.antrun.skip=true
+                          
+                          * @|bold skip|@: @|italic Optional|@ - If set to true, this repo will not be ingested.
+                          
+                          ** @|bold Default|@: false
+                          
+                          * @|bold skipReason|@: @|italic Optional|@ - The context for why the repo is being skipped.
+                          
+                          
+                          @|bold CSV Example|@:
+                          
+                            ,openrewrite/rewrite-spring,main,,gradle,,,,,
+                            ,openrewrite/rewrite-java-migration,main,,gradle,,,,,
+                            additional rows...
+                          """
     )
     Path fromCsv;
 
@@ -91,32 +100,38 @@ public class GitLab implements Callable<Integer> {
     @CommandLine.Option(
             names = "--publishUserSecretName",
             required = true,
-            description = "The name of the GitLab secret that contains the username needed to upload LST artifacts to " +
-                          "your artifact repository.\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
+            description = """
+                          The name of the GitLab secret that contains the username needed to upload LST artifacts to \
+                          your artifact repository.
+                          
+                          GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on \
+                          the Expand button inside your GitLab repository.
+                          """)
     String publishUserSecretName;
 
 
     @CommandLine.Option(
             names = "--publishPwdSecretName",
             required = true,
-            description = "The name of the GitLab secret that contains the password needed to upload LST artifacts to " +
-                          "your artifact repository.\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
+            description = """
+                          The name of the GitLab secret that contains the password needed to upload LST artifacts to \
+                          your artifact repository.
+                          
+                          GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on \
+                          the Expand button inside your GitLab repository.
+                          """)
     String publishPwdSecretName;
 
     @CommandLine.Option(
             names = "--publishUrl",
             required = true,
             defaultValue = "${MODERNE_PUBLISH_URL}",
-            description = "The URL of the Maven formatted artifact repository where LST artifacts should be uploaded " +
-                          "to.\n" +
-                          "\n" +
-                          "Will default to the environment variable @|bold MODERNE_PUBLISH_URL|@ if one exists.\n")
+            description = """
+                          The URL of the Maven formatted artifact repository where LST artifacts should be uploaded \
+                          to.
+                          
+                          Will default to the environment variable @|bold MODERNE_PUBLISH_URL|@ if one exists.
+                          """)
     String publishUrl;
 
     @CommandLine.Option(
@@ -128,39 +143,51 @@ public class GitLab implements Callable<Integer> {
     @CommandLine.Option(
             names = "--commandSuffix",
             defaultValue = "",
-            description = "The suffix that should be appended to the Moderne CLI command when running GitLab jobs.\n\n" +
-                          "@|bold Example|@: --dry-run\n")
+            description = """
+                          The suffix that should be appended to the Moderne CLI command when running GitLab jobs.
+                          
+                          @|bold Example|@: --dry-run
+                          """)
     String commandSuffix;
 
     @CommandLine.Option(
             names = "--defaultBranch",
             defaultValue = "main",
-            description = "If no Git branch is specified for a repository in the CSV file, the GitLab job will attempt " +
-                          "to checkout this branch when pulling down the code.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If no Git branch is specified for a repository in the CSV file, the GitLab job will attempt \
+                          to checkout this branch when pulling down the code.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     String defaultBranch;
 
     @CommandLine.Option(
             names = "--repositoryAccessUserSecretName",
-            description = "The name of the secret containing the username that has access to the repositories in the CSV. " +
-                          "This can be a personal username or group name.\n" +
-                          "The minimum required grant is @|bold read_repository|@.\n" +
-                          "If no token is specified, the $CI_JOB_TOKEN is used.\n")
+            description = """
+                          The name of the secret containing the username that has access to the repositories in the CSV. \
+                          This can be a personal username or group name.
+                          The minimum required grant is @|bold read_repository|@.
+                          If no token is specified, the $CI_JOB_TOKEN is used.
+                          """)
     String repositoryAccessUserSecretName;
 
     @CommandLine.Option(
             names = "--repositoryAccessTokenSecretName",
-            description = "The name of the secret containing the token that has access to the repositories in the CSV. " +
-                          "This can be a personal or group access token.\n" +
-                          "The minimum required grant is @|bold read_repository|@.\n" +
-                          "If no token is specified, the $CI_JOB_TOKEN is used.\n")
+            description = """
+                          The name of the secret containing the token that has access to the repositories in the CSV. \
+                          This can be a personal or group access token.
+                          The minimum required grant is @|bold read_repository|@.
+                          If no token is specified, the $CI_JOB_TOKEN is used.
+                          """)
     String repositoryAccessTokenSecretName;
 
     @CommandLine.Option(names = "--downloadCLI",
             defaultValue = "false",
-            description = "Specifies whether or not the Moderne CLI should be downloaded at the beginning of each run." +
-                          "Should be set to true when the base image does not include the CLI\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          Specifies whether or not the Moderne CLI should be downloaded at the beginning of each run.\
+                          Should be set to true when the base image does not include the CLI
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean downloadCLI;
 
     @CommandLine.Option(
@@ -170,26 +197,32 @@ public class GitLab implements Callable<Integer> {
 
     @CommandLine.Option(
             names = "--downloadCLITokenSecret",
-            description = "The name of the GitLab secret that contains a Bearer token needed to download the CLI\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
+            description = """
+                          The name of the GitLab secret that contains a Bearer token needed to download the CLI
+                          
+                          GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on \
+                          the Expand button inside your GitLab repository.
+                          """)
     String downloadCLITokenSecretName;
 
     @CommandLine.Option(
             names = "--downloadCLIUserNameSecret",
-            description = "The name of the GitLab secret that contains the username needed to download the CLI\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
+            description = """
+                          The name of the GitLab secret that contains the username needed to download the CLI
+                          
+                          GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on \
+                          the Expand button inside your GitLab repository.
+                          """)
     String downloadCLIUserNameSecretName;
 
     @CommandLine.Option(
             names = "--downloadCLIPasswordSecret",
-            description = "The name of the GitLab secret that contains the password needed to download the CLI\n" +
-                          "\n" +
-                          "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                          "the Expand button inside your GitLab repository.\n")
+            description = """
+                          The name of the GitLab secret that contains the password needed to download the CLI
+                          
+                          GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on \
+                          the Expand button inside your GitLab repository.
+                          """)
     String downloadCLIPasswordSecretName;
 
     @CommandLine.Option(
@@ -206,44 +239,59 @@ public class GitLab implements Callable<Integer> {
 
     @CommandLine.Option(names = "--skipSSL",
             defaultValue = "false",
-            description = "If this parameter is included, SSL verification will be skipped when pushing to artifactory.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If this parameter is included, SSL verification will be skipped when pushing to artifactory.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean skipSSL;
 
     @CommandLine.Option(names = "--platform",
-            description = "The OS platform for the Gitlab runner. The possible options are: windows, linux, or macos.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n",
+            description = """
+                          The OS platform for the Gitlab runner. The possible options are: windows, linux, or macos.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """,
             defaultValue = "linux")
     String platform;
 
     @CommandLine.Option(names = "--dockerImageBuildJob",
-            description = "The full name of the docker image to run the build jobs on.\n" +
-                          "This image requires both git and a JDK to be present.\n" +
-                          "\n" +
-                          "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
+            description = """
+                          The full name of the docker image to run the build jobs on.
+                          This image requires both git and a JDK to be present.
+                          
+                          @|bold Example|@: "registry.example.com/my/image:latest"
+                          """,
             defaultValue = "registry.gitlab.com/moderneinc/moderne-gitlab-ingest:latest")
     String dockerImageBuildJob;
 
     @CommandLine.Option(names = "--dockerImageDownloadJob",
-            description = "The full name of the docker image to run the download job on.\n" +
-                          "This image should be based on unix and requires curl to be present.\n" +
-                          "\n" +
-                          "@|bold Example|@: \"registry.example.com/my/image:latest\"\n",
+            description = """
+                          The full name of the docker image to run the download job on.
+                          This image should be based on unix and requires curl to be present.
+                          
+                          @|bold Example|@: "registry.example.com/my/image:latest"
+                          """,
             defaultValue = "ruby:latest")
     String dockerImageDownloadJob;
 
     @CommandLine.Option(names = "--buildJobRetries",
-            description = "Retries to attempt for the build job. Options are: 0, 1 or 2.\n" +
-                          "\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n",
+            description = """
+                          Retries to attempt for the build job. Options are: 0, 1 or 2.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """,
             defaultValue = "0")
     int buildJobRetries;
 
     @CommandLine.Option(
             names = "--verbose",
             defaultValue = "false",
-            description = "If enabled, additional debug statements will be printed.\n" +
-                          "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If enabled, additional debug statements will be printed.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean verbose;
 
     @CommandLine.ArgGroup(exclusive = false)
@@ -255,16 +303,18 @@ public class GitLab implements Callable<Integer> {
         String moderneUrl;
 
         @CommandLine.Option(names = "--moderneToken", required = true,
-                description = "A personal access token for the Moderne tenant." +
-                              "\n" +
-                              "Note you can also use --moderneTokenSecret if you want to use a secret variable")
+                description = """
+                              A personal access token for the Moderne tenant.
+                              Note you can also use --moderneTokenSecret if you want to use a secret variable\
+                              """)
         String moderneToken;
 
         @CommandLine.Option(names = "--moderneTokenSecret", required = true,
-                description = "A secret containing a personal access token for the Moderne tenant." +
-                              "\n" +
-                              "GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on " +
-                              "the Expand button inside your GitLab repository.\n")
+                description = """
+                              A secret containing a personal access token for the Moderne tenant.
+                              GitLab secrets can be created inside of the Settings -> CI/CD, find Variables and click on \
+                              the Expand button inside your GitLab repository.
+                              """)
         String moderneTokenSecret;
     }
 
@@ -353,7 +403,7 @@ public class GitLab implements Callable<Integer> {
                 }
 
 
-                buildJobs.put(String.format("build-%s", repoPath), createBuildLstJob(repoPath, branch));
+                buildJobs.put("build-%s".formatted(repoPath), createBuildLstJob(repoPath, branch));
                 lineNumber++;
             }
 
@@ -371,14 +421,14 @@ public class GitLab implements Callable<Integer> {
     GitLabYaml.Job createDownloadJob() {
         String downloadURL = downloadCLIUrl;
         if (StringUtils.isBlank(downloadURL)) {
-            downloadURL = String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
+            downloadURL = "https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s".formatted(platform, cliVersion, platform, cliVersion);
         }
-        String baseCommand = String.format("curl --fail --location --output mod --request GET --url '%s'", downloadURL);
+        String baseCommand = "curl --fail --location --output mod --request GET --url '%s'".formatted(downloadURL);
         String downloadCommand = baseCommand;
         if (StringUtils.isNotBlank(downloadCLITokenSecretName)) {
-            downloadCommand = String.format("%s --header 'Authorization: Bearer %s'", baseCommand, variable(downloadCLITokenSecretName));
+            downloadCommand = "%s --header 'Authorization: Bearer %s'".formatted(baseCommand, variable(downloadCLITokenSecretName));
         } else if (StringUtils.isNotBlank(downloadCLIUserNameSecretName)) {
-            downloadCommand = String.format("%s --user %s:%s", baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
+            downloadCommand = "%s --user %s:%s".formatted(baseCommand, variable(downloadCLIUserNameSecretName), variable(downloadCLIPasswordSecretName));
         }
 
 
@@ -408,11 +458,11 @@ public class GitLab implements Callable<Integer> {
                 .retry(buildJobRetries)
                 .stage(GitLabYaml.Stage.BUILD_LST)
                 .variable("REPO_PATH", repoPath)
-                .beforeCommand(String.format("REPO_ACCESS_USER=%s", user))
-                .beforeCommand(String.format("REPO_ACCESS_TOKEN=%s", token))
+                .beforeCommand("REPO_ACCESS_USER=%s".formatted(user))
+                .beforeCommand("REPO_ACCESS_TOKEN=%s".formatted(token))
                 .beforeCommand("REPO_URL=$(echo \"$CI_REPOSITORY_URL\" | sed -E \"s|^(https?://)([^/]+@)?([^/]+)(/.+)?/([^/]+)/([^/]+)\\.git|\\1$REPO_ACCESS_USER:$REPO_ACCESS_TOKEN@\\3\\4/$REPO_PATH.git|\")")
                 .beforeCommand("rm -fr $REPO_PATH")
-                .beforeCommand(String.format("git clone --single-branch --branch %s $REPO_URL $REPO_PATH", branch))
+                .beforeCommand("git clone --single-branch --branch %s $REPO_URL $REPO_PATH".formatted(branch))
                 .beforeCommand("echo '127.0.0.1  host.docker.internal' >> /etc/hosts"); // required for org.openrewrite.polyglot.RemoteProgressBarReceiver to work inside gitlab docker container
 
         if (StringUtils.isNotBlank(jobTag)) {
@@ -447,7 +497,7 @@ public class GitLab implements Callable<Integer> {
         if (publishUrl == null) {
             return ""; // for unit tests, will always be non-null in production
         }
-        String args = String.format("config artifacts artifactory edit --local=$REPO_PATH %s--user=%s --password=%s %s",
+        String args = "config artifacts artifactory edit --local=$REPO_PATH %s--user=%s --password=%s %s".formatted(
                 skipSSL ? "--skip-ssl " : "",
                 variable(publishUserSecretName),
                 variable(publishPwdSecretName),
@@ -468,7 +518,7 @@ public class GitLab implements Callable<Integer> {
         if (token == null) {
             token = isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}";
         }
-        String args = String.format("config moderne --token=%s %s", token, tenant.moderneUrl);
+        String args = "config moderne --token=%s %s".formatted(token, tenant.moderneUrl);
         return modCommand(args);
     }
 
@@ -491,11 +541,11 @@ public class GitLab implements Callable<Integer> {
             prefix = isWindowsPlatform ? ".\\\\" : "./";
         }
         String executable = isWindowsPlatform ? "mod.exe" : "mod";
-        return String.format("%s%s %s", prefix, executable, args);
+        return "%s%s %s".formatted(prefix, executable, args);
     }
 
     private static String variable(String name) {
-        return String.format("$%s", name);
+        return "$%s".formatted(name);
     }
 
     private boolean isWindowsPlatform() {
@@ -504,10 +554,10 @@ public class GitLab implements Callable<Integer> {
 
     private String createCliCacheKey() {
         if (StringUtils.isBlank(downloadCLIUrl)) {
-            return String.format("cli-%s-%s", platform, cliVersion);
+            return "cli-%s-%s".formatted(platform, cliVersion);
         }
         String encodedUrl = new String(Base64.getEncoder().encode(downloadCLIUrl.getBytes()));
-        return String.format("cli-%s", encodedUrl);
+        return "cli-%s".formatted(encodedUrl);
     }
 
 }

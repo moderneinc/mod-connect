@@ -27,6 +27,7 @@ import picocli.CommandLine;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
@@ -41,28 +42,40 @@ import java.util.stream.Stream;
         descriptionHeading = "%n@|bold,underline Description|@:%n%n",
         parameterListHeading = "%n@|bold,underline Parameters|@:%n%n",
         optionListHeading = "%n@|bold,underline Options|@:%n%n",
-        header = "Creates a Jenkins Job for each configured repository that will build and publish LST artifacts " +
-                 "to your artifact repository on a regular basis.",
-        description = "Creates a Jenkins Job for each configured repository that will build and publish LST artifacts " +
-                      "to your artifact repository on a regular basis.\n\n" +
-                      "@|bold,underline Example|@:\n\n" +
-                      "  mod connect jenkins --apiToken jenkinsApiToken \\\n" +
-                      "     --controllerUrl https://jenkins.company-name.com \\\n" +
-                      "     --fromCsv /path/to/repos.csv \\\n" +
-                      "     --gitCredsId username-pat \\\n" +
-                      "     --jenkinsUser some-username \\\n" +
-                      "     --publishCredsId artifactory \\\n" +
-                      "     --publishUrl https://artifact-place.com/artifactory/moderne-ingest",
-        footer = "If you are a CloudBees CI authenticated user, you will also need these permissions:\n\n" +
-                 "1. Overall/System Read access. This is needed to get the list of plugins and their versions.\n" +
-                 "    - GET /pluginManager/api/json\n\n" +
-                 "2. Create, Configure, Read folders and Jobs.\n" +
-                 "    - POST /createItem\n" +
-                 "    - GET  /job/$folder/api/json\n" +
-                 "    - GET  /job/$folder/job/$item/api/json\n\n" +
-                 "3. (Optionally) Delete jobs. This is only required if --deleteSkipped is selected.\n" +
-                 "    - POST /job/$folder/job/$item/doDelete\n\n" +
-                 "For more details around these permissions, please see: https://cutt.ly/75J0mtI")
+        header = """
+                 Creates a Jenkins Job for each configured repository that will build and publish LST artifacts \
+                 to your artifact repository on a regular basis.\
+                 """,
+        description = """
+                      Creates a Jenkins Job for each configured repository that will build and publish LST artifacts \
+                      to your artifact repository on a regular basis.
+                      
+                      @|bold,underline Example|@:
+                      
+                        mod connect jenkins --apiToken jenkinsApiToken \\
+                           --controllerUrl https://jenkins.company-name.com \\
+                           --fromCsv /path/to/repos.csv \\
+                           --gitCredsId username-pat \\
+                           --jenkinsUser some-username \\
+                           --publishCredsId artifactory \\
+                           --publishUrl https://artifact-place.com/artifactory/moderne-ingest\
+                      """,
+        footer = """
+                 If you are a CloudBees CI authenticated user, you will also need these permissions:
+                 
+                 1. Overall/System Read access. This is needed to get the list of plugins and their versions.
+                     - GET /pluginManager/api/json
+                 
+                 2. Create, Configure, Read folders and Jobs.
+                     - POST /createItem
+                     - GET  /job/$folder/api/json
+                     - GET  /job/$folder/job/$item/api/json
+                 
+                 3. (Optionally) Delete jobs. This is only required if --deleteSkipped is selected.
+                     - POST /job/$folder/job/$item/doDelete
+                 
+                 For more details around these permissions, please see: https://cutt.ly/75J0mtI\
+                 """)
 // The CloudBees docs for permissions are https://docs.cloudbees.com/docs/cloudbees-ci/latest/cloud-secure-guide/delegating-administration-modern#_overallsystem_read
 public class Jenkins implements Callable<Integer> {
 
@@ -71,63 +84,69 @@ public class Jenkins implements Callable<Integer> {
      **/
     @CommandLine.Option(names = "--controllerUrl",
             required = true,
-            description = "The URL of the Jenkins controller that will create the jobs. Typically this is the URL " +
-                          "of your Jenkins instance.\n\n" +
-                          "@|bold Example|@: https://jenkins.company-name.com\n")
+            description = """
+                          The URL of the Jenkins controller that will create the jobs. Typically this is the URL \
+                          of your Jenkins instance.
+                          
+                          @|bold Example|@: https://jenkins.company-name.com
+                          """)
     String controllerUrl;
 
     @CommandLine.Option(names = "--fromCsv",
             required = true,
-            description = "The location of the CSV file containing the list of repositories that should be ingested. " +
-                          "One Jenkins Job will be made for each repository. Follows the schema of:\n" +
-                          "\n" + // TODO Remove CSV columns after https://github.com/moderneinc/jenkins-ingest/pull/161
-                          "@|bold [scmHost,repoName,repoBranch,mavenTool,gradleTool,jdkTool,desiredStyle,additionalBuildArgs,skip,skipReason]|@\n" +
-                          "\n" +
-                          "* @|bold scmHost|@: @|italic Optional|@ - The URL of the source code management tool where the " +
-                          "repository is hosted. \n" +
-                          "\n" +
-                          "** @|bold Example|@: github.com or gitlab.com\n" +
-                          "\n" +
-                          "* @|bold repoName|@: @|bold Required|@ - The repository that should be ingested. Follows the " +
-                          "format of: organization/repository.\n" +
-                          "\n" +
-                          "** @|bold Example|@: openrewrite/rewrite\n" +
-                          "\n" +
-                          "* @|bold repoBranch|@: @|italic Optional|@ - The branch of the above repository that should be " +
-                          "ingested.\n" +
-                          "\n" +
-                          "** @|bold Default|@: main\n" +
-                          "\n" +
-                          "* @|bold mavenTool|@: @|italic Optional|@ - The name of the Maven tool that should be used to " +
-                          "run Maven jobs. Specified in the Jenkins Global Tool Configuration page:\n" +
-                          "    {controllerUrl}/manage/configureTools/\n" +
-                          "\n" +
-                          "* @|bold gradleTool|@: @|italic Optional|@ - The name of the Gradle tool that should be used to " +
-                          "run Gradle jobs. Specified in the Jenkins Global Tool Configuration page:\n" +
-                          "    {controllerUrl}/manage/configureTools/\n" +
-                          "\n" +
-                          "* @|bold jdkTool|@: @|italic Optional|@ - No longer in use.\n" +
-                          "\n" +
-                          "* @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during ingest.\n" +
-                          "\n" +
-                          "** @|bold Example|@: org.openrewrite.java.SpringFormat\n" +
-                          "\n" +
-                          "* @|bold additionalBuildArgs|@: @|italic Optional|@ - Additional arguments that are added to " +
-                          "the Maven or Gradle build command.\n" +
-                          "\n" +
-                          "** @|bold Example|@: -Dmaven.antrun.skip=true\n" +
-                          "\n" +
-                          "* @|bold skip|@: @|italic Optional|@ - If set to true, this repo will not be ingested.\n" +
-                          "\n" +
-                          "** @|bold Default|@: false\n" +
-                          "\n" +
-                          "* @|bold skipReason|@: @|italic Optional|@ - The context for why the repo is being skipped.\n" +
-                          "\n\n" +
-                          "@|bold CSV Example|@:\n" +
-                          "\n" +
-                          "  ,openrewrite/rewrite-spring,main,,gradle,,,,,\n" +
-                          "  ,openrewrite/rewrite-java-migration,main,,gradle,,,,,\n" +
-                          "  additional rows...\n"
+            description = """
+                          The location of the CSV file containing the list of repositories that should be ingested. \
+                          One Jenkins Job will be made for each repository. Follows the schema of:
+                          
+                          @|bold [scmHost,repoName,repoBranch,mavenTool,gradleTool,jdkTool,desiredStyle,additionalBuildArgs,skip,skipReason]|@
+                          
+                          * @|bold scmHost|@: @|italic Optional|@ - The URL of the source code management tool where the \
+                          repository is hosted.\s
+                          
+                          ** @|bold Example|@: github.com or gitlab.com
+                          
+                          * @|bold repoName|@: @|bold Required|@ - The repository that should be ingested. Follows the \
+                          format of: organization/repository.
+                          
+                          ** @|bold Example|@: openrewrite/rewrite
+                          
+                          * @|bold repoBranch|@: @|italic Optional|@ - The branch of the above repository that should be \
+                          ingested.
+                          
+                          ** @|bold Default|@: main
+                          
+                          * @|bold mavenTool|@: @|italic Optional|@ - The name of the Maven tool that should be used to \
+                          run Maven jobs. Specified in the Jenkins Global Tool Configuration page:
+                              {controllerUrl}/manage/configureTools/
+                          
+                          * @|bold gradleTool|@: @|italic Optional|@ - The name of the Gradle tool that should be used to \
+                          run Gradle jobs. Specified in the Jenkins Global Tool Configuration page:
+                              {controllerUrl}/manage/configureTools/
+                          
+                          * @|bold jdkTool|@: @|italic Optional|@ - No longer in use.
+                          
+                          * @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during ingest.
+                          
+                          ** @|bold Example|@: org.openrewrite.java.SpringFormat
+                          
+                          * @|bold additionalBuildArgs|@: @|italic Optional|@ - Additional arguments that are added to \
+                          the Maven or Gradle build command.
+                          
+                          ** @|bold Example|@: -Dmaven.antrun.skip=true
+                          
+                          * @|bold skip|@: @|italic Optional|@ - If set to true, this repo will not be ingested.
+                          
+                          ** @|bold Default|@: false
+                          
+                          * @|bold skipReason|@: @|italic Optional|@ - The context for why the repo is being skipped.
+                          
+                          
+                          @|bold CSV Example|@:
+                          
+                            ,openrewrite/rewrite-spring,main,,gradle,,,,,
+                            ,openrewrite/rewrite-java-migration,main,,gradle,,,,,
+                            additional rows...
+                          """
     )
     Path fromCsv;
 
@@ -144,8 +163,11 @@ public class Jenkins implements Callable<Integer> {
     String publishCredsId;
 
     @CommandLine.Option(names = "--publishUrl", required = true, defaultValue = "${MODERNE_PUBLISH_URL}",
-            description = "The URL of the Maven repository where LST artifacts should be uploaded to.\n\n" +
-                          "Will default to the environment variable @|bold MODERNE_PUBLISH_URL|@ if one exists.\n")
+            description = """
+                          The URL of the Maven repository where LST artifacts should be uploaded to.
+                          
+                          Will default to the environment variable @|bold MODERNE_PUBLISH_URL|@ if one exists.
+                          """)
     String publishUrl;
 
     /**
@@ -160,26 +182,38 @@ public class Jenkins implements Callable<Integer> {
     String cliVersion;
 
     @CommandLine.Option(names = "--commandSuffix", defaultValue = "",
-            description = "The suffix that should be appended to the Moderne CLI command when running Jenkins Jobs.\n\n" +
-                          "@|bold Example|@: --dry-run\n")
+            description = """
+                          The suffix that should be appended to the Moderne CLI command when running Jenkins Jobs.
+                          
+                          @|bold Example|@: --dry-run
+                          """)
     String commandSuffix;
 
     @CommandLine.Option(names = "--defaultBranch", defaultValue = "main",
-            description = "If no Git branch is specified for a repository in the CSV file, the Jenkins Job will attempt " +
-                          "to checkout this branch when pulling down the code.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If no Git branch is specified for a repository in the CSV file, the Jenkins Job will attempt \
+                          to checkout this branch when pulling down the code.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     String defaultBranch;
 
     @CommandLine.Option(names = "--deleteSkipped", defaultValue = "false",
-            description = "If set to true, whenever a repository in the CSV file has 'skip' set to true, the corresponding " +
-                          "Jenkins Job will be deleted. This is useful if you want to remove specific jobs that are failing, " +
-                          "but you also want to preserve the list of repositories that are ingested.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If set to true, whenever a repository in the CSV file has 'skip' set to true, the corresponding \
+                          Jenkins Job will be deleted. This is useful if you want to remove specific jobs that are failing, \
+                          but you also want to preserve the list of repositories that are ingested.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean deleteSkipped;
 
     @CommandLine.Option(names = "--downloadCLI", defaultValue = "false",
-            description = "Specifies whether or not the Moderne CLI should be downloaded at the beginning of each Jenkins Job run.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          Specifies whether or not the Moderne CLI should be downloaded at the beginning of each Jenkins Job run.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean downloadCLI;
 
     @CommandLine.Option(names = "--downloadCLIUrl",
@@ -191,20 +225,28 @@ public class Jenkins implements Callable<Integer> {
     String downloadCLICreds;
 
     @CommandLine.Option(names = "--folder",
-            description = "The Jenkins folder that will store the created jobs. This folder will be created if it does not exist.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n",
+            description = """
+                          The Jenkins folder that will store the created jobs. This folder will be created if it does not exist.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """,
             defaultValue = "moderne-ingest")
     String folder;
 
     @CommandLine.Option(names = "--mavenSettingsConfigFileId",
-            description = "The ID of the Jenkins Maven settings config file that will be used to configure Maven builds. " +
-                          "Specified in the Jenkins Global Tool Configuration page:\n" +
-                          "    {controllerUrl}/manage/configureTools/\n")
+            description = """
+                          The ID of the Jenkins Maven settings config file that will be used to configure Maven builds. \
+                          Specified in the Jenkins Global Tool Configuration page:
+                              {controllerUrl}/manage/configureTools/
+                          """)
     String mavenSettingsConfigFileId;
 
     @CommandLine.Option(names = "--platform",
-            description = "The OS platform for the Jenkins node/agent. The possible options are: windows, linux, or macos.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n",
+            description = """
+                          The OS platform for the Jenkins node/agent. The possible options are: windows, linux, or macos.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """,
             defaultValue = "linux")
     String platform;
 
@@ -214,16 +256,22 @@ public class Jenkins implements Callable<Integer> {
     String prefix;
 
     @CommandLine.Option(names = "--scheduledAt", defaultValue = "H H * * *",
-            description = "The cron schedule that the Jenkins Jobs should follow. By default, Jenkins will execute " +
-                          "each job once a day while making sure to space them out so that the system is not overloaded at " +
-                          "one particular time.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          The cron schedule that the Jenkins Jobs should follow. By default, Jenkins will execute \
+                          each job once a day while making sure to space them out so that the system is not overloaded at \
+                          one particular time.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     String scheduledAt;
 
     @CommandLine.Option(names = "--skipSSL",
             defaultValue = "false",
-            description = "If this parameter is included, SSL verification will be skipped on the generated jobs.\n\n" +
-                          "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If this parameter is included, SSL verification will be skipped on the generated jobs.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean skipSSL;
 
     @CommandLine.Option(names = "--createValidateJobs",
@@ -235,25 +283,36 @@ public class Jenkins implements Callable<Integer> {
     UserSecret userSecret;
 
     @CommandLine.Option(names = "--verbose", defaultValue = "false",
-            description = "If enabled, additional debug statements will be printed throughout the Jenkins configuration.\n" +
-                          "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If enabled, additional debug statements will be printed throughout the Jenkins configuration.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean verbose;
 
     @CommandLine.Option(names = "--workspaceCleanup", defaultValue = "false",
-            description = "If enabled, use the WsCleanup plugin to clean the workspace after finishing the job.\n" +
-                          "\n@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                          If enabled, use the WsCleanup plugin to clean the workspace after finishing the job.
+                          
+                          @|bold Default|@: ${DEFAULT-VALUE}
+                          """)
     boolean workspaceCleanup;
 
     @SuppressWarnings("unused")
     static class UserSecret {
-        @CommandLine.Option(names = "--apiToken", description = "The Jenkins apiToken that will be used when " +
-                                                                "authentication is needed in Jenkins (e.g., the creation of Jenkins Jobs).\n")
+        @CommandLine.Option(names = "--apiToken", description = """
+                                                                The Jenkins apiToken that will be used when \
+                                                                authentication is needed in Jenkins (e.g., the creation of Jenkins Jobs).
+                                                                """)
         String apiToken;
 
         @CommandLine.Option(names = "--jenkinsPwd",
-                description = "The Jenkins password that will be used when authentication is needed in Jenkins " +
-                              "(e.g., the creation of Jenkins Jobs).\n\n"
-                              + "@|italic Jenkins best practices recommend using an apiToken instead of a password|@.\n")
+                description = """
+                              The Jenkins password that will be used when authentication is needed in Jenkins \
+                              (e.g., the creation of Jenkins Jobs).
+                              
+                              @|italic Jenkins best practices recommend using an apiToken instead of a password|@.
+                              """)
         String jenkinsPwd;
 
         String get() {
@@ -279,9 +338,11 @@ public class Jenkins implements Callable<Integer> {
     }
 
     @CommandLine.Option(names = "--credentials",
-        description = "Extra credentials to bind in the form of " +
-                      "CRENDENTIALS_ID=VARIABLE for StringBinding or " +
-                      "CREDENTIALS_ID=USERNAME_VARIABLE:PASSWORD_VARIABLE for UsernamePasswordMultiBinding")
+        description = """
+                      Extra credentials to bind in the form of \
+                      CRENDENTIALS_ID=VARIABLE for StringBinding or \
+                      CREDENTIALS_ID=USERNAME_VARIABLE:PASSWORD_VARIABLE for UsernamePasswordMultiBinding\
+                      """)
     Map<String, String> extraCredentials;
 
     static final String JENKINS_CRUMB_HEADER = "Jenkins-Crumb";
@@ -321,7 +382,7 @@ public class Jenkins implements Callable<Integer> {
         private final String filename;
 
         public String format(String... varargs) {
-            return String.format(TextBlock.textBlock(filename), (Object[]) varargs);
+            return TextBlock.textBlock(filename).formatted((Object[]) varargs);
         }
     }
 
@@ -506,8 +567,8 @@ public class Jenkins implements Callable<Integer> {
             }
         }
         if (!result.keySet().containsAll(requiredPlugins)) {
-            throw new RuntimeException(String.format(
-                    "mod-connect requires to install the following Jenkins plugins: %s",
+            throw new RuntimeException(
+                    "mod-connect requires to install the following Jenkins plugins: %s".formatted(
                     requiredPlugins.stream().filter(plugin -> !result.containsKey(plugin))
                             .collect(Collectors.joining(", "))));
         }
@@ -611,7 +672,7 @@ public class Jenkins implements Callable<Integer> {
 
     private String getDownloadCLIUrl() {
         if (StringUtils.isBlank(downloadCLIUrl)) {
-            return String.format("https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s", platform, cliVersion, platform, cliVersion);
+            return "https://pkgs.dev.azure.com/moderneinc/moderne_public/_packaging/moderne/maven/v1/io/moderne/moderne-cli-%s/%s/moderne-cli-%s-%s".formatted(platform, cliVersion, platform, cliVersion);
         }
         return downloadCLIUrl;
     }
@@ -626,7 +687,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config artifacts artifactory edit --local=. %s--user=%s --password=%s %s ",
+        command += "%s config artifacts artifactory edit --local=. %s--user=%s --password=%s %s ".formatted(
                 isWindowsPlatform ? "mod.exe" : "mod",
                 skipSSL ? "--skip-ssl " : "",
                 isWindowsPlatform ? "$env:ARTIFACTS_PUBLISH_CRED_USR" : "${ARTIFACTS_PUBLISH_CRED_USR}",
@@ -642,7 +703,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config java version edit --local=. %s",
+        command += "%s config java version edit --local=. %s".formatted(
                 isWindowsPlatform ? "mod.exe" : "mod",
                 jdkTool
         );
@@ -659,7 +720,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             command += isWindowsPlatform ? ".\\" : "./";
         }
-        command += String.format("%s config moderne edit --local=. --token=%s %s ",
+        command += "%s config moderne edit --local=. --token=%s %s ".formatted(
                 isWindowsPlatform ? "mod.exe" : "mod",
                 isWindowsPlatform ? "$env:MODERNE_TOKEN" : "${MODERNE_TOKEN}",
                 tenant.moderneUrl
@@ -678,7 +739,7 @@ public class Jenkins implements Callable<Integer> {
             command += isWindowsPlatform ? ".\\" : "./";
         }
 
-        return command + String.format("%s config build maven settings edit --local=. %s ",
+        return command + "%s config build maven settings edit --local=. %s ".formatted(
                 isWindowsPlatform ? "mod.exe" : "mod",
                 isWindowsPlatform ? "$env:MODERNE_MVN_SETTINGS_XML" : "${MODERNE_MVN_SETTINGS_XML}");
     }
@@ -689,7 +750,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             prefix += isWindowsPlatform ? ".\\" : "./";
         }
-        String command = String.format("%s%s build . --no-download", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        String command = "%s%s build . --no-download".formatted(prefix, isWindowsPlatform ? "mod.exe" : "mod");
         if (!StringUtils.isBlank(commandSuffix)) {
             command += " " + commandSuffix;
         }
@@ -703,7 +764,7 @@ public class Jenkins implements Callable<Integer> {
         if (downloadCLI || !StringUtils.isBlank(downloadCLIUrl)) {
             prefix = isWindowsPlatform ? ".\\" : "./";
         }
-        return String.format("%s%s publish .", prefix, isWindowsPlatform ? "mod.exe" : "mod");
+        return "%s%s publish .".formatted(prefix, isWindowsPlatform ? "mod.exe" : "mod");
     }
 
     private String createFreestyleScm(Map<String, String> plugins, String scmHost, String branch) {
@@ -724,13 +785,17 @@ public class Jenkins implements Callable<Integer> {
         if (isWindowsPlatform) {
             String credentials = "";
             if (StringUtils.isNotBlank(downloadCLICreds)) {
-                credentials = "$wc.Headers[\"Authorization\"] = string.Format(\"Basic {0}\", " +
-                        "Convert.ToBase64String(Encoding.ASCII.GetBytes(\"$env:CLI_DOWNLOAD_CRED_USR\", \"$env:CLI_DOWNLOAD_CRED_PWD\")))";
+                credentials = """
+                        $wc.Headers["Authorization"] = string.Format("Basic {0}", \
+                        Convert.ToBase64String(Encoding.ASCII.GetBytes("$env:CLI_DOWNLOAD_CRED_USR", "$env:CLI_DOWNLOAD_CRED_PWD")))\
+                        """;
             }
-            return String.format(
-                    "$wc = New-Object System.Net.WebClient\n" +
-                    "%s\n" +
-                    "$wc.DownloadFile(\"%s\", \"mod.exe\")",
+            return (
+                    """
+                    $wc = New-Object System.Net.WebClient
+                    %s
+                    $wc.DownloadFile("%s", "mod.exe")\
+                    """).formatted(
                     credentials,
                     downloadURL);
         } else {
@@ -738,7 +803,7 @@ public class Jenkins implements Callable<Integer> {
             if (!StringUtils.isBlank(downloadCLICreds)) {
                 credentials = "--user ${CLI_DOWNLOAD_CRED_USR}:${CLI_DOWNLOAD_CRED_PWD} ";
             }
-            return String.format("curl %s--request GET %s --fail -o mod;\nchmod 755 mod;", credentials, downloadURL);
+            return "curl %s--request GET %s --fail -o mod;\nchmod 755 mod;".formatted(credentials, downloadURL);
         }
     }
 
@@ -751,10 +816,12 @@ public class Jenkins implements Callable<Integer> {
             if (isWindowsPlatform) {
                 builder.append(Templates.FREESTYLE_POWERSHELL_DEFINITION.format(
                         plugins.get(POWERSHELL_PLUGIN),
-                        "$wc = New-Object System.Net.WebClient\n" +
-                        "$wc.Headers[\"Authorization\"] = \"Bearer \\$env:MODERNE_TOKEN\"\n" +
-                        "$wc.Headers[\"x-moderne-scmtoken\"] = $env:SCM_TOKEN\n" +
-                        "$wc.DownloadFile(\"$patchDownloadUrl\", \"patch.diff\")"
+                        """
+                        $wc = New-Object System.Net.WebClient
+                        $wc.Headers["Authorization"] = "Bearer \\$env:MODERNE_TOKEN"
+                        $wc.Headers["x-moderne-scmtoken"] = $env:SCM_TOKEN
+                        $wc.DownloadFile("$patchDownloadUrl", "patch.diff")\
+                        """
                 ));
                 builder.append(Templates.FREESTYLE_POWERSHELL_DEFINITION.format("git apply patch.diff"));
             } else {
@@ -824,7 +891,7 @@ public class Jenkins implements Callable<Integer> {
             }
             String executable = parts[0];
             String args = Arrays.stream(Arrays.copyOfRange(parts, 1, parts.length))
-                    .map(arg -> String.format("<argument>%s</argument>", arg))
+                    .map(arg -> "<argument>%s</argument>".formatted(arg))
                     .collect(Collectors.joining("\n              "));
             builder.append(Templates.FREESTYLE_MAVEN_DEFINITION.format(
                     executable,
@@ -933,7 +1000,7 @@ public class Jenkins implements Callable<Integer> {
 
     private String createScmTokenReference(String host) {
         try {
-            return "scmToken_" + new URL(host).getHost();
+            return "scmToken_" + URI.create(host).toURL().getHost();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }

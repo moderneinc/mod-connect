@@ -121,10 +121,10 @@ class GitlabTest {
             GitLabYaml.Job job = gitlab.createDownloadJob();
             assertThat(job.getStage()).isEqualTo(GitLabYaml.Stage.DOWNLOAD);
             if (StringUtils.isBlank(gitlab.downloadCLIUrl)) {
-                assertThat(job.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
+                assertThat(job.getCache().getKey()).isEqualTo("cli-%s-%s".formatted(gitlab.platform, gitlab.cliVersion));
             } else {
                 String encoded = new String(Base64.getEncoder().encode(gitlab.downloadCLIUrl.getBytes()));
-                assertThat(job.getCache().getKey()).isEqualTo(String.format("cli-%s", encoded));
+                assertThat(job.getCache().getKey()).isEqualTo("cli-%s".formatted(encoded));
             }
 
             assertThat(job.getScript())
@@ -257,7 +257,7 @@ class GitlabTest {
             assertThat(build.getStage()).isEqualTo(GitLabYaml.Stage.BUILD_LST);
             if (gitlab.downloadCLI) {
                 assertThat(build.getCache().getPolicy()).isEqualTo(GitLabYaml.Cache.Policy.PULL);
-                assertThat(build.getCache().getKey()).isEqualTo(String.format("cli-%s-%s", gitlab.platform, gitlab.cliVersion));
+                assertThat(build.getCache().getKey()).isEqualTo("cli-%s-%s".formatted(gitlab.platform, gitlab.cliVersion));
                 assertThat(build.getCache().getPaths()).containsExactly("mod");
             } else {
                 assertThat(build.getCache()).isNull();

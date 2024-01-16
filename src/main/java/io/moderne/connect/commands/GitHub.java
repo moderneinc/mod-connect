@@ -39,89 +39,98 @@ import java.util.concurrent.Callable;
         parameterListHeading = "%n@|bold,underline Parameters|@:%n%n",
         optionListHeading = "%n@|bold,underline Options|@:%n%n",
         header = "Creates a GitHub workflow that builds and publishes LST artifacts to your artifact repository on a regular basis.",
-        description = "This command will create a GitHub workflow that builds and publishes LST artifacts to your " +
-                "artifact repository on a regular basis. " +
-                "A workflow can be created for ingesting a single repository (by specifying the @|bold path|@ parameter) " +
-                "or a workflow can be created for ingesting a mass number of repositories (by specifying the " +
-                "@|bold fromCsv|@ parameter).\n" +
-                "\n" +
-                "@|bold,underline If you specify the path parameter|@:\n" +
-                "\n" +
-                "This command will create a @|bold moderne-workflow.yml|@ file in the @|bold .github/workflows|@ " +
-                "directory at the path you specified. This workflow file can then be modified and published to a " +
-                "GitHub repository to set up the workflow for building and publishing LST artifacts for that repository.\n" +
-                "\n" +
-                "When running this command, you will need to ensure that you provide the " +
-                "@|bold publishPwdSecretName|@, @|bold publishUrl|@, and @|bold publishUserSecretName|@ parameters.\n" +
-                "\n" +
-                "For the @|bold publishPwdSecretName|@ and @|bold publishUserSecretName|@ parameters, the expectation " +
-                "is that you will create a GitHub secret for each inside of the repository you're wanting to ingest. " +
-                "When running this command, you'd then provide the names of these secrets rather than the secrets " +
-                "themselves\n" +
-                "(e.g., @|bold --publishPwdSecretName <name of GitHub secret>|@).\n" +
-                "\n" +
-                "* @|bold Example|@:\n" +
-                "\n" +
-                "  mod connect github --publishPwdSecretName publishPwdSecretName \\\n" +
-                "      --publishUrl https://some-repo.com \\\n" +
-                "      --publishUserSecretName publishUserSecretName \\\n" +
-                "      --path /path/to/project \n" +
-                "\n\n" +
-                "@|bold,underline If you specify the fromCsv parameter|@:\n" +
-                "\n" +
-                "This command will directly commit an ingestion workflow and the necessary files to run it to the " +
-                "GitHub repository you specify. This workflow will iterate over every repository in the CSV and " +
-                "build/publish LST artifacts for each.\n" +
-                "\n" +
-                "Before running this command, you will need to ensure that you've created a dedicated GitHub " +
-                "repository where all of these files can be uploaded to.\n" +
-                "\n" +
-                "When running this command, you will need to ensure that you provide the @|bold accessToken|@, " +
-                "@|bold dispatchSecretName|@, @|bold publishPwdSecretName|@, @|bold publishUrl|@, " +
-                "@|bold publishUserSecretName|@, @|bold repo|@, and @|bold repoReadSecretName|@ parameters.\n" +
-                "\n" +
-                "For the @|bold dispatchSecretName|@, @|bold repoReadSecretName|@, @|bold publishPwdSecretName|@ and " +
-                "@|bold publishUserSecretName|@ parameters, the expectation is that you will " +
-                "create a GitHub secret for each inside of the repository you provided to this command. When running " +
-                "this command, you'd then provide the names of these secrets rather than the secrets themselves " +
-                "(e.g., @|bold --publishPwdSecretName <name of GitHub secret>|@).\n" +
-                "\n" +
-                "* @|bold Example|@:\n" +
-                "\n" +
-                "  mod connect github --accessToken moderne-github-access-token \\\n" +
-                "      --dispatchSecretName dispatchSecretName \\\n" +
-                "      --fromCsv /path/to/repos.csv \\\n" +
-                "      --publishPwdSecretName publishPwdSecretName \\\n" +
-                "      --publishUrl https://artifact-place.com/artifactory/moderne-ingest \\\n" +
-                "      --publishUserSecretName publishUserSecretName \n" +
-                "      --repo company-name/repo-name \\\n" +
-                "      --repoReadSecretName readSecretName")
+        description = """
+                This command will create a GitHub workflow that builds and publishes LST artifacts to your \
+                artifact repository on a regular basis. \
+                A workflow can be created for ingesting a single repository (by specifying the @|bold path|@ parameter) \
+                or a workflow can be created for ingesting a mass number of repositories (by specifying the \
+                @|bold fromCsv|@ parameter).
+                
+                @|bold,underline If you specify the path parameter|@:
+                
+                This command will create a @|bold moderne-workflow.yml|@ file in the @|bold .github/workflows|@ \
+                directory at the path you specified. This workflow file can then be modified and published to a \
+                GitHub repository to set up the workflow for building and publishing LST artifacts for that repository.
+                
+                When running this command, you will need to ensure that you provide the \
+                @|bold publishPwdSecretName|@, @|bold publishUrl|@, and @|bold publishUserSecretName|@ parameters.
+                
+                For the @|bold publishPwdSecretName|@ and @|bold publishUserSecretName|@ parameters, the expectation \
+                is that you will create a GitHub secret for each inside of the repository you're wanting to ingest. \
+                When running this command, you'd then provide the names of these secrets rather than the secrets \
+                themselves
+                (e.g., @|bold --publishPwdSecretName <name of GitHub secret>|@).
+                
+                * @|bold Example|@:
+                
+                  mod connect github --publishPwdSecretName publishPwdSecretName \\
+                      --publishUrl https://some-repo.com \\
+                      --publishUserSecretName publishUserSecretName \\
+                      --path /path/to/project\s
+                
+                
+                @|bold,underline If you specify the fromCsv parameter|@:
+                
+                This command will directly commit an ingestion workflow and the necessary files to run it to the \
+                GitHub repository you specify. This workflow will iterate over every repository in the CSV and \
+                build/publish LST artifacts for each.
+                
+                Before running this command, you will need to ensure that you've created a dedicated GitHub \
+                repository where all of these files can be uploaded to.
+                
+                When running this command, you will need to ensure that you provide the @|bold accessToken|@, \
+                @|bold dispatchSecretName|@, @|bold publishPwdSecretName|@, @|bold publishUrl|@, \
+                @|bold publishUserSecretName|@, @|bold repo|@, and @|bold repoReadSecretName|@ parameters.
+                
+                For the @|bold dispatchSecretName|@, @|bold repoReadSecretName|@, @|bold publishPwdSecretName|@ and \
+                @|bold publishUserSecretName|@ parameters, the expectation is that you will \
+                create a GitHub secret for each inside of the repository you provided to this command. When running \
+                this command, you'd then provide the names of these secrets rather than the secrets themselves \
+                (e.g., @|bold --publishPwdSecretName <name of GitHub secret>|@).
+                
+                * @|bold Example|@:
+                
+                  mod connect github --accessToken moderne-github-access-token \\
+                      --dispatchSecretName dispatchSecretName \\
+                      --fromCsv /path/to/repos.csv \\
+                      --publishPwdSecretName publishPwdSecretName \\
+                      --publishUrl https://artifact-place.com/artifactory/moderne-ingest \\
+                      --publishUserSecretName publishUserSecretName\s
+                      --repo company-name/repo-name \\
+                      --repoReadSecretName readSecretName\
+                """)
 public class GitHub implements Callable<Integer> {
 
     /**
      * Required Parameters
      **/
     @CommandLine.Option(names = "--publishPwdSecretName", required = true,
-            description = "The name of the GitHub secret that contains the password needed to upload LST artifacts to " +
-                    "your artifact repository.\n" +
-                    "\n" +
-                    "GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a " +
-                    "GitHub repository.\n")
+            description = """
+                    The name of the GitHub secret that contains the password needed to upload LST artifacts to \
+                    your artifact repository.
+                    
+                    GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a \
+                    GitHub repository.
+                    """)
     private String publishPwdSecretName;
 
     @CommandLine.Option(names = "--publishUrl", required = true, defaultValue = "${MODERNE_PUBLISH_URL}",
-            description = "The URL of the Maven formatted artifact repository where LST artifacts should be uploaded " +
-                    "to.\n" +
-                    "\n" +
-                    "Will default to the environment variable @|bold MODERNE_PUBLISH_URL|@ if one exists.\n")
+            description = """
+                    The URL of the Maven formatted artifact repository where LST artifacts should be uploaded \
+                    to.
+                    
+                    Will default to the environment variable @|bold MODERNE_PUBLISH_URL|@ if one exists.
+                    """)
     private String publishUrl;
 
     @CommandLine.Option(names = "--publishUserSecretName", required = true,
-            description = "The name of the GitHub secret that contains the username needed to upload LST artifacts to " +
-                    "your artifact repository.\n" +
-                    "\n" +
-                    "GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a " +
-                    "GitHub repository.\n")
+            description = """
+                    The name of the GitHub secret that contains the username needed to upload LST artifacts to \
+                    your artifact repository.
+                    
+                    GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a \
+                    GitHub repository.
+                    """)
     private String publishUserSecretName;
 
     @CommandLine.ArgGroup(multiplicity = "1")
@@ -130,59 +139,64 @@ public class GitHub implements Callable<Integer> {
     // One of these two is required
     static class Source {
         @CommandLine.Option(names = "--path",
-                description = "The local path to the Git repository where a GitHub workflow should be created.\n" +
-                        "\n" +
-                        "To run the connect github command, you must either specify the @|bold path|@ or the " +
-                        "@|bold fromCsv|@ parameter.\n")
+                description = """
+                        The local path to the Git repository where a GitHub workflow should be created.
+                        
+                        To run the connect github command, you must either specify the @|bold path|@ or the \
+                        @|bold fromCsv|@ parameter.
+                        """)
         Path path;
         @CommandLine.Option(names = "--fromCsv",
-                description = "The location of the CSV file containing the list of repositories that should be " +
-                        "ingested into Moderne. A GitHub action will build and publish LST artifacts for every " +
-                        "repository in this file.\n" +
-                        "\n" +
-                        "Follows the schema of: \n" +
-                        "\n" +
-                        "@|bold [repoName,repoBranch,javaVersion,desiredStyle,additionalBuildArgs,skip,skipReason]|@\n" +
-                        "\n" +
-                        "* @|bold repoName|@: @|italic Required|@ - The repository that should be ingested. Follows " +
-                        "the format of organization/repository.\n" +
-                        "\n" +
-                        "** @|bold Example|@: openrewrite/rewrite\n" +
-                        "\n" +
-                        "* @|bold repoBranch|@: @|italic Optional|@ - The branch of the above repository that should be " +
-                        "ingested.\n" +
-                        "\n" +
-                        "** @|bold Default|@: main\n" +
-                        "\n" +
-                        "* @|bold javaVersion|@: @|italic Optional|@ - The Java version used to compile this " +
-                        "repository.\n" +
-                        "** @|bold Default|@: 11\n" +
-                        "\n" +
-                        "* @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during " +
-                        "ingest.\n" +
-                        "\n" +
-                        "** @|bold Example|@: org.openrewrite.java.SpringFormat\n" +
-                        "\n" +
-                        "* @|bold additionalBuildArgs|@: @|italic Optional|@ - Additional arguments that are added to " +
-                        "the Maven or Gradle build command.\n" +
-                        "\n" +
-                        "** @|bold Example|@: -Dmaven.antrun.skip=true\n" +
-                        "\n" +
-                        "* @|bold skip|@: @|italic Optional|@ - If set to true, this repo will not be ingested.\n" +
-                        "\n" +
-                        "** @|bold Default|@: false\n" +
-                        "\n" +
-                        "* @|bold skipReason|@: @|italic Optional|@ - The context for why the repo is being skipped.\n" +
-                        "\n\n" +
-                        "@|bold CSV Example|@:\n" +
-                        "\n" +
-                        "  openrewrite/rewrite-spring,main,11,org.openrewrite.java.SpringFormat,,false,,\n" +
-                        "  openrewrite/rewrite,master,17,,-Phadoop_2,,\n" +
-                        "  foo/bar,main,11,,,true,some skip reason\n" +
-                        "  // More Rows\n" +
-                        "\n" +
-                        "To run the connect github command, you must either specify the @|bold path|@ or the " +
-                        "@|bold fromCsv|@ parameter.\n")
+                description = """
+                        The location of the CSV file containing the list of repositories that should be \
+                        ingested into Moderne. A GitHub action will build and publish LST artifacts for every \
+                        repository in this file.
+                        
+                        Follows the schema of:\s
+                        
+                        @|bold [repoName,repoBranch,javaVersion,desiredStyle,additionalBuildArgs,skip,skipReason]|@
+                        
+                        * @|bold repoName|@: @|italic Required|@ - The repository that should be ingested. Follows \
+                        the format of organization/repository.
+                        
+                        ** @|bold Example|@: openrewrite/rewrite
+                        
+                        * @|bold repoBranch|@: @|italic Optional|@ - The branch of the above repository that should be \
+                        ingested.
+                        
+                        ** @|bold Default|@: main
+                        
+                        * @|bold javaVersion|@: @|italic Optional|@ - The Java version used to compile this \
+                        repository.
+                        ** @|bold Default|@: 11
+                        
+                        * @|bold desiredStyle|@: @|italic Optional|@ - The OpenRewrite style name to apply during \
+                        ingest.
+                        
+                        ** @|bold Example|@: org.openrewrite.java.SpringFormat
+                        
+                        * @|bold additionalBuildArgs|@: @|italic Optional|@ - Additional arguments that are added to \
+                        the Maven or Gradle build command.
+                        
+                        ** @|bold Example|@: -Dmaven.antrun.skip=true
+                        
+                        * @|bold skip|@: @|italic Optional|@ - If set to true, this repo will not be ingested.
+                        
+                        ** @|bold Default|@: false
+                        
+                        * @|bold skipReason|@: @|italic Optional|@ - The context for why the repo is being skipped.
+                        
+                        
+                        @|bold CSV Example|@:
+                        
+                          openrewrite/rewrite-spring,main,11,org.openrewrite.java.SpringFormat,,false,,
+                          openrewrite/rewrite,master,17,,-Phadoop_2,,
+                          foo/bar,main,11,,,true,some skip reason
+                          // More Rows
+                        
+                        To run the connect github command, you must either specify the @|bold path|@ or the \
+                        @|bold fromCsv|@ parameter.
+                        """)
         Path csvFile;
     }
 
@@ -190,84 +204,104 @@ public class GitHub implements Callable<Integer> {
      * Optional Parameters
      **/
     @CommandLine.Option(names = "--accessToken",
-            description = "A @|bold classic|@ GitHub access token that will be used to commit files and create " +
-                    "workflows (a fine-grained token won't work). This token @|italic will not|@ be used to run the " +
-                    "workflows.\n" +
-                    "\n" +
-                    "This token requires the @|bold workflow|@ permission.\n" +
-                    "\n" +
-                    "This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.\n")
+            description = """
+                    A @|bold classic|@ GitHub access token that will be used to commit files and create \
+                    workflows (a fine-grained token won't work). This token @|italic will not|@ be used to run the \
+                    workflows.
+                    
+                    This token requires the @|bold workflow|@ permission.
+                    
+                    This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.
+                    """)
     private String accessToken;
 
     @CommandLine.Option(names = "--apiUrl", defaultValue = "https://api.github.com",
-            description = "The base URL for the GitHub REST API. For GitHub enterprise users, this commonly " +
-                    "follows the format of: @|bold http(s)://HOSTNAME/api/v3|@ \n" +
-                    "\n" +
-                    "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                    The base URL for the GitHub REST API. For GitHub enterprise users, this commonly \
+                    follows the format of: @|bold http(s)://HOSTNAME/api/v3|@\s
+                    
+                    @|bold Default|@: ${DEFAULT-VALUE}
+                    """)
     private String apiURL;
 
     @CommandLine.Option(names = "--branch", defaultValue = "main",
-            description = "The branch of the repository specified in the @|bold repo|@ parameter where the generated " +
-                    "workflow files should be committed to.\n" +
-                    "\n" +
-                    "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                    The branch of the repository specified in the @|bold repo|@ parameter where the generated \
+                    workflow files should be committed to.
+                    
+                    @|bold Default|@: ${DEFAULT-VALUE}
+                    """)
     private String branch;
 
     @CommandLine.Option(names = "--additionalBuildArgs", defaultValue = "",
-            description = "Additional arguments that are added to the Maven or Gradle build command.\n" +
-                    "\n" +
-                    "@|bold Example|@: -Dmaven.antrun.skip=true\n")
+            description = """
+                    Additional arguments that are added to the Maven or Gradle build command.
+                    
+                    @|bold Example|@: -Dmaven.antrun.skip=true
+                    """)
     private String additionalBuildArgs;
 
     @CommandLine.Option(names = "--cliVersion", defaultValue = "v2.0.5",
-            description = "The version of the Moderne CLI that should be used when running the ingestion workflow. " +
-                    "Follows standard semantic versioning with a v in front.\n" +
-                    "\n" +
-                    "@|bold Example|@: @|bold v2.0.5|@\n")
+            description = """
+                    The version of the Moderne CLI that should be used when running the ingestion workflow. \
+                    Follows standard semantic versioning with a v in front.
+                    
+                    @|bold Example|@: @|bold v2.0.5|@
+                    """)
     private String cliVersion;
 
     @CommandLine.Option(names = "--dispatchSecretName",
-            description = "The name of the GitHub secret that contains the access token that will be used to run the " +
-                    "GitHub workflows in the repo specified in the repo parameter.\n" +
-                    "\n" +
-                    "This token requires the @|bold workflow|@ permission.\n" +
-                    "\n" +
-                    "GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a " +
-                    "GitHub repository.\n" +
-                    "\n" +
-                    "This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.\n")
+            description = """
+                    The name of the GitHub secret that contains the access token that will be used to run the \
+                    GitHub workflows in the repo specified in the repo parameter.
+                    
+                    This token requires the @|bold workflow|@ permission.
+                    
+                    GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a \
+                    GitHub repository.
+                    
+                    This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.
+                    """)
     private String dispatchSecretName;
 
     @CommandLine.Option(names = "--javaVersion", defaultValue = "11",
-            description = "The Java version needed to compile and run the repository that is indicated in the " +
-                    "@|bold path|@ parameter. Can be any major version (e.g., 8, 11, 17).\n" +
-                    "\n" +
-                    "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                    The Java version needed to compile and run the repository that is indicated in the \
+                    @|bold path|@ parameter. Can be any major version (e.g., 8, 11, 17).
+                    
+                    @|bold Default|@: ${DEFAULT-VALUE}
+                    """)
     private int javaVersion;
 
     @CommandLine.Option(names = "--repoReadSecretName",
-            description = "The name of the GitHub secret that contains the access token with read access to each " +
-                    "repository in the provided CSV.\n" +
-                    "\n" +
-                    "GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a " +
-                    "GitHub repository.\n" +
-                    "\n" +
-                    "This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.\n")
+            description = """
+                    The name of the GitHub secret that contains the access token with read access to each \
+                    repository in the provided CSV.
+                    
+                    GitHub secrets can be created inside of of the Security -> Secrets -> Actions section in a \
+                    GitHub repository.
+                    
+                    This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.
+                    """)
     private String repoReadSecretName;
 
     @CommandLine.Option(names = "--repo",
-            description = "The dedicated GitHub repository where the workflows and the CSV file will be committed to. " +
-                    "Follows the format of organization/repository name.\n" +
-                    "\n" +
-                    "This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.\n" +
-                    "\n" +
-                    "@|bold Example|@: openrewrite/rewrite\n")
+            description = """
+                    The dedicated GitHub repository where the workflows and the CSV file will be committed to. \
+                    Follows the format of organization/repository name.
+                    
+                    This parameter is @|bold required|@ if the @|bold fromCSV|@ parameter is specified.
+                    
+                    @|bold Example|@: openrewrite/rewrite
+                    """)
     private String repository;
 
     @CommandLine.Option(names = "--verbose", defaultValue = "false",
-            description = "If enabled, additional debug statements will be printed throughout the GitHub configuration.\n" +
-                    "\n" +
-                    "@|bold Default|@: ${DEFAULT-VALUE}\n")
+            description = """
+                    If enabled, additional debug statements will be printed throughout the GitHub configuration.
+                    
+                    @|bold Default|@: ${DEFAULT-VALUE}
+                    """)
     private boolean verbose;
 
     private static final String GITHUB_WORKFLOWS_FOLDER = ".github/workflows/";
@@ -353,15 +387,15 @@ public class GitHub implements Callable<Integer> {
     private void generateWorkflowFile() throws IOException {
         String setupJavaAction = TextBlock.textBlock("cli/github/setupJava.json.template");
         if (new File(source.path.toFile(), "pom.xml").exists()) {
-            setupJavaAction = String.format(setupJavaAction, javaVersion, "maven");
+            setupJavaAction = setupJavaAction.formatted(javaVersion, "maven");
         } else if (new File(source.path.toFile(), "build.gradle").exists()
                 || new File(source.path.toFile(), "build.gradle.kts").exists()) {
-            setupJavaAction = String.format(setupJavaAction, javaVersion, "gradle");
+            setupJavaAction = setupJavaAction.formatted(javaVersion, "gradle");
         } else {
             setupJavaAction = "";
         }
 
-        String workflow = String.format(toString(WORKFLOW_TEMPLATE),
+        String workflow = toString(WORKFLOW_TEMPLATE).formatted(
                 setupJavaAction, cliVersion, publishUrl, publishUserSecretName, publishPwdSecretName, this.additionalBuildArgs);
         Path workflowsDir = Files.createDirectories(new File(source.path.toFile(), GITHUB_WORKFLOWS_FOLDER).toPath());
 
@@ -385,17 +419,17 @@ public class GitHub implements Callable<Integer> {
     private void commitFiles() throws IOException {
         HttpResponse<String> response = Unirest.post(apiURL + "/graphql")
                 .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
-                .body(String.format(TextBlock.textBlock("cli/github/createRepo.json.template"),
-                        repository, branch,
-                        toBase64(String.format(toString(MODERNE_DISPATCH_INGEST_WORKFLOW),
-                                repoReadSecretName, cliVersion, publishUrl, publishUserSecretName, publishPwdSecretName)),
-                        toBase64(String.format(toString(MODERNE_MASS_INGEST_WORKFLOW), apiURL, repository, dispatchSecretName)),
-                        fromResourcetoBase64(),
-                        toBase64(new String(Files.readAllBytes(source.csvFile))),
-                        lastCommit())).asString();
+                .body(TextBlock.textBlock("cli/github/createRepo.json.template").formatted(
+                repository, branch,
+                toBase64(toString(MODERNE_DISPATCH_INGEST_WORKFLOW).formatted(
+                        repoReadSecretName, cliVersion, publishUrl, publishUserSecretName, publishPwdSecretName)),
+                toBase64(toString(MODERNE_MASS_INGEST_WORKFLOW).formatted(apiURL, repository, dispatchSecretName)),
+                fromResourcetoBase64(),
+                toBase64(new String(Files.readAllBytes(source.csvFile))),
+                lastCommit())).asString();
 
         if (!response.isSuccess()) {
-            throw new RuntimeException(String.format("[ERROR] The commit in %s to submit Moderne workflows failed with error code %s. Message: %s",
+            throw new RuntimeException("[ERROR] The commit in %s to submit Moderne workflows failed with error code %s. Message: %s".formatted(
                     repository, response.getStatus(), response.getBody()));
         }
     }
@@ -404,12 +438,14 @@ public class GitHub implements Callable<Integer> {
         String[] slug = repository.split("/");
         HttpResponse<String> lastCommitResponse = Unirest.post(apiURL + "/graphql")
                 .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
-                .body(String.format(TextBlock.textBlock("cli/github/last_commit.json.template"), slug[1], slug[0], branch)).asString();
+                .body(TextBlock.textBlock("cli/github/last_commit.json.template").formatted(slug[1], slug[0], branch)).asString();
 
         if (!lastCommitResponse.isSuccess()) {
             throw new RuntimeException(
-                    String.format("[ERROR] It is not possible to resolve the last commit for "
-                                    + "the repository %s and branch %s. Error code %s with message %s", repository, branch,
+                    ("""
+                            [ERROR] It is not possible to resolve the last commit for \
+                            the repository %s and branch %s. Error code %s with message %s\
+                            """).formatted(repository, branch,
                             lastCommitResponse.getStatus(), lastCommitResponse.getBody()));
         }
 
@@ -422,8 +458,10 @@ public class GitHub implements Callable<Integer> {
             String message = messageNode == null
                     ? "Verify your PATH has workflow permissions" : messageNode.asText();
 
-            throw new RuntimeException(String.format("[ERROR] It is not possible to resolve the l"
-                    + "ast commit for the repository %s and branch %s. Error %s", repository, branch, message));
+            throw new RuntimeException(("""
+                    [ERROR] It is not possible to resolve the l\
+                    ast commit for the repository %s and branch %s. Error %s\
+                    """).formatted(repository, branch, message));
         } else {
             JsonNode ref = node.get("data")
                     .get("repository")
@@ -431,7 +469,7 @@ public class GitHub implements Callable<Integer> {
 
             if (ref == null || ref.isNull()) {
                 throw new RuntimeException(
-                        String.format("The branch %s do not exist in %s", branch, repository));
+                        "The branch %s do not exist in %s".formatted(branch, repository));
             }
             return ref
                     .get("target")

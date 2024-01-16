@@ -68,7 +68,7 @@ class GitHubTest {
         assertTrue(workflow.exists());
 
         String workflowContent = TextBlock.textBlock("github/workflow_buildtool.yaml");
-        assertEquals(String.format(workflowContent, buildTool, MOD_VERSION),
+        assertEquals(workflowContent.formatted(buildTool, MOD_VERSION),
                 new String(Files.readAllBytes(workflow.toPath())));
         deleteWorkflow(path);
     }
@@ -87,7 +87,7 @@ class GitHubTest {
         assertEquals(0, result);
         assertTrue(workflow.exists());
         String workflowAgnostic = TextBlock.textBlock("github/workflow_agnostic.yaml");
-        assertEquals(String.format(workflowAgnostic, MOD_VERSION),
+        assertEquals(workflowAgnostic.formatted(MOD_VERSION),
                 new String(Files.readAllBytes(workflow.toPath())));
         deleteWorkflow(path);
 
