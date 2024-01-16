@@ -386,7 +386,7 @@ public class Jenkins implements Callable<Integer> {
                     lineNumber++;
                     continue;
                 }
-                if (!repoSlug.startsWith(prefix)) {
+                if (!repoSlug.toLowerCase().startsWith(prefix.toLowerCase())) {
                     lineNumber++;
                     continue;
                 }
