@@ -19,7 +19,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
       - name: Updates the version file to use it from the CLI
         run: echo ${{ steps.get_version.outputs.VERSION }} > src/main/resources/version.txt
-      - uses: gradle/wrapper-validation-action@v1
+      - uses: gradle/wrapper-validation-action@v2
       - uses: actions/setup-java@v3
         with:
           distribution: temurin
