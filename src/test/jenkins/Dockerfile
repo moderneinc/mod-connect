@@ -5,7 +5,7 @@ COPY casc.yaml /var/jenkins_home/casc.yaml
 RUN jenkins-plugin-cli --plugins \
     adoptopenjdk:1.5 \
     cloudbees-folder:6.815.v0dd5a_cb_40e0e \
-    configuration-as-code:1647.ve39ca_b_829b_42 \
+    configuration-as-code:1670.v564dc8b_982d0 \
     git:5.1.0 \
     git-client:4.4.0 \
     gradle:2.8 \
