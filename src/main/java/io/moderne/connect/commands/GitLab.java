@@ -285,7 +285,9 @@ public class GitLab implements Callable<Integer> {
 
         try {
             final GitLabYaml.Pipeline pipeline = createPipeline();
-            if (pipeline == null) return 1;
+            if (pipeline == null) {
+                return 1;
+            }
 
             File pipelineFile = new File("moderne-pipeline.yml");
             if (!pipelineFile.exists() && !pipelineFile.createNewFile()) {

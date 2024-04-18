@@ -6,7 +6,7 @@ package acme;
  */
 public class App 
 {
-    private int a = 0;
+    private int a;
     public static void main( String[] args )
     {
         System.out.println( "Hello World!" );
