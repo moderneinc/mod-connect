@@ -120,7 +120,7 @@ public class GitLabYaml {
             PULL,
 
             @JsonProperty("pull-push")
-            PUSH_AND_PULL;
+            PUSH_AND_PULL
         }
     }
 
@@ -140,7 +140,7 @@ public class GitLabYaml {
             ON_FAILURE,
 
             @JsonProperty("on_success")
-            ON_SUCCESS;
+            ON_SUCCESS
         }
     }
 
