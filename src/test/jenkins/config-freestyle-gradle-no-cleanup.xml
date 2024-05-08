@@ -51,7 +51,7 @@
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
-            <command>./mod config lsts artifacts artifactory edit --local=. --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest </command>
+            <command>./mod config lsts artifacts artifactory edit --user=${ARTIFACTS_PUBLISH_CRED_USR} --password=${ARTIFACTS_PUBLISH_CRED_PWD} https://artifactory.moderne.ninja/artifactory/moderne-ingest </command>
             <configuredLocalRules/>
         </hudson.tasks.Shell>
         <hudson.tasks.Shell>
