@@ -30,6 +30,7 @@ dependencyCheck {
     analyzers.assemblyEnabled = false
     failBuildOnCVSS = 9.0F
     suppressionFile = "suppressions.xml"
+    nvd.apiKey = System.getenv("NVD_API_KEY")
 }
 
 group = "io.moderne"
