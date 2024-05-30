@@ -34,7 +34,8 @@ import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @Testcontainers
 class JenkinsTest {
@@ -83,7 +84,7 @@ class JenkinsTest {
                 .header(Jenkins.JENKINS_CRUMB_HEADER, Jenkins.generateCrumb(jenkinsHost, JENKINS_TESTING_USER, JENKINS_TESTING_PWD))
                 .body("newTokenName=cli")
                 .asString();
-        assertTrue(response.isSuccess(), "Failed to create API token: " + response.getStatus() + " " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to create API token: " + response.getStatus() + " " + response.getStatusText()).isTrue();
         try {
             return new ObjectMapper()
                     .readTree(response.getBody())
@@ -107,13 +108,13 @@ class JenkinsTest {
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup",
                 "--verbose");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
                 .asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
@@ -129,13 +130,13 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
                 .asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
@@ -151,12 +152,12 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-java-migration_main/api/json").asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-java-migration_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/rewrite-java-migration-config.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
@@ -172,12 +173,12 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
 
@@ -191,12 +192,12 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
 
         response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
 
@@ -211,12 +212,12 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
 
@@ -231,7 +232,7 @@ class JenkinsTest {
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup",
                 "--deleteSkipped=true");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertFalse(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json").asString().isSuccess()));
     }
@@ -248,13 +249,13 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--workspaceCleanup");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
                 .asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-agent.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
@@ -270,13 +271,13 @@ class JenkinsTest {
                 "--gitCredsId", GIT_CREDS,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--verbose");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
                 .asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-no-cleanup.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }
@@ -300,18 +301,18 @@ class JenkinsTest {
                     "--moderneToken=" + MODERNE_TOKEN,
                     "--workspaceCleanup",
                     "--verbose");
-            assertEquals(0, result);
+            assertThat(result).isEqualTo(0);
 
             await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/api/json")
                     .asString().isSuccess()));
 
             HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
-            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
             String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle.xml").toPath()));
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
 
             HttpResponse<String> responseMaven = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-maven-plugin_main/config.xml").asString();
-            assertTrue(responseMaven.isSuccess(), "Failed to get job config.xml: " + responseMaven.getStatusText());
+            assertThat(responseMaven.isSuccess()).as("Failed to get job config.xml: " + responseMaven.getStatusText()).isTrue();
             String expectedJobMaven = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-maven.xml").toPath()));
             assertThat(responseMaven.getBody()).isEqualToIgnoringWhitespace(expectedJobMaven);
 
@@ -338,18 +339,18 @@ class JenkinsTest {
                     "--createValidateJobs",
                     "--workspaceCleanup",
                     "--verbose");
-            assertEquals(0, result);
+            assertThat(result).isEqualTo(0);
 
             await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-spring_main/api/json")
                     .asString().isSuccess()));
 
             HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-spring_main/config.xml").asString();
-            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
             String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle-validate.xml").toPath()));
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
 
             HttpResponse<String> responseMaven = Unirest.get(jenkinsHost + "/job/validate/job/openrewrite_rewrite-maven-plugin_main/config.xml").asString();
-            assertTrue(responseMaven.isSuccess(), "Failed to get job config.xml: " + responseMaven.getStatusText());
+            assertThat(responseMaven.isSuccess()).as("Failed to get job config.xml: " + responseMaven.getStatusText()).isTrue();
             String expectedJobMaven = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-maven-validate.xml").toPath()));
             assertThat(responseMaven.getBody()).isEqualToIgnoringWhitespace(expectedJobMaven);
         }
@@ -372,13 +373,13 @@ class JenkinsTest {
                     "--moderneToken=" + MODERNE_TOKEN,
                     "--verbose");
 
-            assertEquals(0, result);
+            assertThat(result).isEqualTo(0);
 
             await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/api/json")
                     .asString().isSuccess()));
 
             HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/freestyle/job/openrewrite_rewrite-spring_main/config.xml").asString();
-            assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+            assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
             String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-freestyle-gradle-no-cleanup.xml").toPath()));
             assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
         }
@@ -398,13 +399,13 @@ class JenkinsTest {
                 "--workspaceCleanup",
                 "--credentials", "extraCredentials1=TOKEN_VARIABLE",
                 "--credentials", "extraCredentials2=USER_VARIABLE:PASSWORD_VARIABLE");
-        assertEquals(0, result);
+        assertThat(result).isEqualTo(0);
 
         await().untilAsserted(() -> assertTrue(Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/api/json")
                 .asString().isSuccess()));
 
         HttpResponse<String> response = Unirest.get(jenkinsHost + "/job/moderne-ingest/job/openrewrite_rewrite-spring_main/config.xml").asString();
-        assertTrue(response.isSuccess(), "Failed to get job config.xml: " + response.getStatusText());
+        assertThat(response.isSuccess()).as("Failed to get job config.xml: " + response.getStatusText()).isTrue();
         String expectedJob = new String(Files.readAllBytes(new File("src/test/jenkins/config-credentials.xml").toPath()));
         assertThat(response.getBody()).isEqualToIgnoringWhitespace(expectedJob);
     }

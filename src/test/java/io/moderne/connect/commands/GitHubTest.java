@@ -22,8 +22,7 @@ import picocli.CommandLine;
 import java.io.File;
 import java.nio.file.Files;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GitHubTest {
 
@@ -64,12 +63,11 @@ class GitHubTest {
                 "--publishPwdSecretName", PWD_SECRET,
                 "--publishUrl", ARTIFACTORY_URL);
 
-        assertEquals(0, result);
-        assertTrue(workflow.exists());
+        assertThat(result).isEqualTo(0);
+        assertThat(workflow).exists();
 
         String workflowContent = TextBlock.textBlock("github/workflow_buildtool.yaml");
-        assertEquals(String.format(workflowContent, buildTool, MOD_VERSION),
-                new String(Files.readAllBytes(workflow.toPath())));
+        assertThat(new String(Files.readAllBytes(workflow.toPath()))).isEqualTo(String.format(workflowContent, buildTool, MOD_VERSION));
         deleteWorkflow(path);
     }
 
@@ -84,11 +82,10 @@ class GitHubTest {
                 "--publishPwdSecretName", PWD_SECRET,
                 "--publishUrl", ARTIFACTORY_URL,
                 "--repoReadSecretName", "PAT_TOKEN");
-        assertEquals(0, result);
-        assertTrue(workflow.exists());
+        assertThat(result).isEqualTo(0);
+        assertThat(workflow).exists();
         String workflowAgnostic = TextBlock.textBlock("github/workflow_agnostic.yaml");
-        assertEquals(String.format(workflowAgnostic, MOD_VERSION),
-                new String(Files.readAllBytes(workflow.toPath())));
+        assertThat(new String(Files.readAllBytes(workflow.toPath()))).isEqualTo(String.format(workflowAgnostic, MOD_VERSION));
         deleteWorkflow(path);
 
     }

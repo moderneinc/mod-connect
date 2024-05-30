@@ -4,11 +4,12 @@
 package gradle.repo;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class LibraryTest {
     @Test void someLibraryMethodReturnsTrue() {
         Library classUnderTest = new Library();
-        assertTrue(classUnderTest.someLibraryMethod(), "someLibraryMethod should return 'true'");
+        assertThat(classUnderTest.someLibraryMethod()).as("someLibraryMethod should return 'true'").isTrue();
     }
 }

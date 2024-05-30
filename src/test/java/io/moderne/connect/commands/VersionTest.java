@@ -21,7 +21,7 @@ import picocli.CommandLine;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class VersionTest {
 
@@ -31,7 +31,7 @@ public class VersionTest {
         StringWriter sw = new StringWriter();
         cmd.setOut(new PrintWriter(sw));
         cmd.setErr(new PrintWriter(sw));
-        assertEquals(0, cmd.execute("version"));
-        assertEquals("development" + System.lineSeparator(), sw.toString());
+        assertThat(cmd.execute("version")).isEqualTo(0);
+        assertThat(sw.toString()).isEqualTo("development" + System.lineSeparator());
     }
 }
